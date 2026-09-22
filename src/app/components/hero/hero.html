@@ -1,22 +1,57 @@
 <section id="top" class="section hero" aria-label="Introduction">
-  <div class="section-inner">
-    <p class="mono" appReveal>$ cat /etc/whoami</p>
-    <h1 class="hero-name" appReveal>
-      Joshua <span class="accent">T-C</span>
-    </h1>
-    <p class="lede" appReveal>
-      I build systems and the machines they run on. Right now: local AI
-      infrastructure — large language models on a single GPU, the pipelines
-      around them, and the sites I use to tell people about it.
-    </p>
-    <div class="hero-meta" appReveal>
-      <p class="mono"><strong>pronouns:</strong> any / all</p>
-      <p class="mono"><strong>status:</strong> metaphysical exile</p>
-      <p class="mono"><strong>stack:</strong> angular · three.js · llama.cpp</p>
+  <div class="section-inner hero-inner">
+    <div class="hero-copy">
+      <p class="mono" appReveal>$ cat /etc/whoami</p>
+      <h1 class="hero-name" appReveal>
+        Joshua <span class="accent">T-C</span>
+      </h1>
+      <p class="lede hero-lede" appReveal>
+        CS student. I build the machines I depend on — a homelab, the server
+        infrastructure for a 600-member community, and a local AI stack
+        running four large models on one GPU.
+      </p>
+      <div class="hero-meta" appReveal>
+        <p class="mono"><strong>pronouns:</strong> any / all</p>
+        <p class="mono"><strong>status:</strong> metaphysical exile</p>
+        <p class="mono"><strong>stack:</strong> angular · three.js · llama.cpp</p>
+      </div>
+      <div class="hero-cta" appReveal>
+        <a class="prompt-link" href="#work"
+          ><span class="prompt">joshua@t-c:~$</span>./explore ↓</a
+        >
+        <a class="prompt-link" href="#stack"
+          ><span class="prompt">joshua@t-c:~$</span>./ai-stack</a
+        >
+      </div>
     </div>
-    <div class="hero-cta" appReveal>
-      <a class="btn btn--primary" href="#work">Selected work</a>
-      <a class="btn" href="#stack">The AI stack</a>
+
+    <!-- The terminal card: prerendered in full for no-JS, retyped by JS from
+         the same TERMINAL.hero source. Decorative duplicate of the meta above. -->
+    <div class="hero-visual" appReveal>
+      <div class="term" aria-hidden="true">
+        <div class="term__chrome">
+          <span class="term__dots">
+            <span class="term__dot term__dot--on"></span>
+            <span class="term__dot"></span>
+            <span class="term__dot"></span>
+          </span>
+          <span class="term__title">joshua@t-c:~</span>
+        </div>
+        <div class="term__screen">
+          @for (line of terminalLines; track $index; let last = $last) {
+          <div class="term__line">
+            @if (line.prompt) {
+            <span class="term__prompt">{{ line.prompt }}</span>
+            }
+            <span class="term__text">{{ line.prompt ? ' ' + line.text : line.text }}</span
+            >
+            @if (last) {
+            <span class="term__caret"></span>
+            }
+          </div>
+          }
+        </div>
+      </div>
     </div>
   </div>
 </section>

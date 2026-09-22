@@ -3,7 +3,8 @@ import {
   GITHUB_USERNAME,
   HIDDEN_REPOS,
   MAX_GRID_PROJECTS,
-  STACK
+  STACK,
+  TERMINAL
 } from './projects';
 
 /** Collects every string the site ships, for the secret scan. */
@@ -14,7 +15,7 @@ function allStrings(): string[] {
     else if (Array.isArray(value)) value.forEach(walk);
     else if (value && typeof value === 'object') Object.values(value).forEach(walk);
   };
-  walk([GITHUB_USERNAME, MAX_GRID_PROJECTS, [...HIDDEN_REPOS], CURATED_PROJECTS, STACK]);
+  walk([GITHUB_USERNAME, MAX_GRID_PROJECTS, [...HIDDEN_REPOS], CURATED_PROJECTS, STACK, TERMINAL]);
   return out;
 }
 

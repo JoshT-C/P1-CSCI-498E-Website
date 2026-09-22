@@ -11,6 +11,34 @@ rebuild — the container is stateless.
 
 ---
 
+## 0. Pre-deploy audit (dev machine, before first boot and before every deploy)
+
+The site runs on personal hardware, so "it works on my machine" is not the
+bar — the shipped bundle is scanned, and the rendered page is audited in a
+real browser. Run from the repo root:
+
+```bash
+npm run lint && npm test && npm run build
+npm run audit:dist    # scans dist/ for secrets, http:// origins, sourcemaps
+```
+
+Manual matrix before deploying (in a browser, against `npm start`):
+
+- desktop 1440 — 3D machine renders, scroll dives wide→close, screen text follows the section
+- 375 px — no horizontal overflow, DOM terminal card types, grid wraps
+- 200% zoom — layout holds, 44 px touch targets still work
+- reduced-motion (OS setting or DevTools emulation) — static screen, no dive, no reveal animation
+- `?no3d=1` — css mode: no canvas, terminal card types, `.stack-bars` visible, zero console errors
+
+After deploy: re-run the console/audit pass against the live URL
+(`node scripts/audit-browser.mjs https://jtc.lopyhupis.com` once it exists)
+and confirm the step-13 headers.
+
+**Stop if** `audit:dist` reports any finding, or any matrix row shows console
+errors. A clean logged runtime-fps downgrade in a throttled/headless browser
+is a pass-with-note (the self-downgrade is the feature); an unexplained one
+is not.
+
 ## A. Preflight (one-time, ~10 min)
 
 ```bash

@@ -39,7 +39,7 @@ export const CURATED_PROJECTS: readonly CuratedProject[] = [
     id: 'ai-stack',
     title: 'The Local AI Stack',
     tagline: 'One machine, one engine, four backends.',
-    body: 'A self-hosted inference stack: a single locally-built llama.cpp engine serving four large language models on an RTX 5090, with a chat UI, local search, and document pipeline running around it. Everything runs on one desktop box, loopback-only.',
+    body: 'A self-hosted inference stack: a single locally built llama.cpp engine serving four large models on an RTX 5090, with a chat UI, local search, and a document pipeline around it. Loopback-only — nothing on it is exposed.',
     href: '#stack',
     hrefLabel: 'Read the stack notes below ↓',
     tags: ['llama.cpp', 'RTX 5090', 'local-first']
@@ -48,7 +48,7 @@ export const CURATED_PROJECTS: readonly CuratedProject[] = [
     id: 'previous-site',
     title: 'The Previous Site',
     tagline: 'First iteration, still running.',
-    body: 'My first full personal site — Angular on GitHub Pages with the terminal-voice identity. It stays up at joshua_t-c.github.io as the reference point this revamp is measured against.',
+    body: 'My first full personal site — Angular on GitHub Pages, terminal-voice identity and all. It stays up at joshua_t-c.github.io as the reference this revamp is measured against.',
     href: 'https://joshua_t-c.github.io',
     hrefLabel: 'joshua_t-c.github.io',
     tags: ['Angular', 'GitHub Pages']
@@ -68,12 +68,12 @@ export const STACK = {
   machine: 'RTX 5090 · 32 GB VRAM — Ryzen 9 9950X · 16c/32t — 123 GiB RAM — PCIe 5.0 x16',
 
   intro: [
-    'One machine, one engine, four backends. The stack lives on a System76 Thelio Mira running Bazzite — an RTX 5090 with 32 GB of VRAM next to a 16-core Ryzen 9 9950X and 123 GiB of system RAM. Everything is local: no cloud round-trip, no telemetry, no per-token billing.',
-    'The engine is a single llama.cpp build compiled from commit-pinned source with Blackwell (sm_120) support, because stock package builds did not have it when the card shipped. It serves the Anthropic Messages API natively, so tools that speak that protocol — including Claude Code, via `claude --local` — point at it directly.'
+    'A System76 Thelio Mira on Bazzite: an RTX 5090 with 32 GB of VRAM next to a 16-core Ryzen 9 9950X and 123 GiB of system RAM. Everything is local — no cloud round-trip, no telemetry, no per-token billing.',
+    'The engine is a single llama.cpp build, compiled from commit-pinned source with sm_120 support, because the stock package builds did not have it when the card shipped. It serves the Anthropic Messages API natively, so anything that speaks that protocol — including Claude Code, via `claude --local` — points at it directly.'
   ],
 
   switching:
-    'The four backends are mutually exclusive — only one is resident in VRAM at a time. `ai use <model>` reclaims the current one (polling nvidia-smi until the VRAM is actually freed) before loading the next, so there are no half-loads and no out-of-memory crashes.',
+    'The four backends are mutually exclusive — only one is resident in VRAM at a time. `ai use <model>` polls nvidia-smi until the VRAM is actually freed before loading the next, so there are no half-loads and no out-of-memory crashes.',
 
   /**
    * Measured on the machine itself (median, sustained load).
@@ -111,8 +111,45 @@ export const STACK = {
   ] satisfies readonly ModelRow[],
 
   alwaysOn:
-    'Running around the engine at all times: Open WebUI for chat, SearXNG for local search, Docling for document parsing (CPU-only, deliberately), Tika for extraction, and MCPO for model context over the web. Every endpoint is loopback-only with bearer auth — nothing on the stack is exposed to the network.',
+    'Running around the engine at all times: Open WebUI for chat, SearXNG for local search, Docling for document parsing (CPU-only, on purpose), Tika for extraction, and MCPO for model context over the web. Every endpoint is loopback-only with bearer auth — nothing on the stack is exposed to the network.'
+};
 
-  harness:
-    'One build, one server process, four interchangeable model backends — the point being that switching models is a config change, not a reinstall.'
+/**
+ * One line of typed terminal output. `prompt` is the `user@host:~$` prefix
+ * rendered in the accent color; a line without one is program output.
+ */
+export interface TerminalLine {
+  prompt?: string;
+  text: string;
+}
+
+/**
+ * The lines the terminal screen types for the static sections — one source
+ * for the 3D screen texture and the DOM fallback card. The `work` and
+ * `stack` screens are composed from CURATED_PROJECTS / STACK at runtime.
+ *
+ * Keep every line to 36 columns or fewer: the screen-text machine will
+ * truncate longer ones, but the copy should fit on its own.
+ */
+export const TERMINAL: Record<'hero' | 'about' | 'contact', readonly TerminalLine[]> = {
+  hero: [
+    { prompt: 'joshua@t-c:~$', text: 'cat /etc/whoami' },
+    { text: 'Joshua T-C' },
+    { prompt: 'joshua@t-c:~$', text: 'cat /etc/pronouns' },
+    { text: 'any / all' },
+    { prompt: 'joshua@t-c:~$', text: 'echo $STATUS' },
+    { text: 'metaphysical exile' }
+  ],
+  about: [
+    { prompt: 'joshua@t-c:~$', text: 'cat about.md' },
+    { text: 'CS student, Colorado School of Mines' },
+    { text: 'Builds: homelab, community infra,' },
+    { text: 'k8s, zero-trust auth, LLM agents' },
+    { text: 'Runs four LLMs on one local GPU.' }
+  ],
+  contact: [
+    { prompt: 'joshua@t-c:~$', text: 'contact --help' },
+    { text: 'No email published.' },
+    { text: 'github.com/JoshT-C' }
+  ]
 };
