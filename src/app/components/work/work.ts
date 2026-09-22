@@ -64,7 +64,11 @@ export class WorkComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: projects => this.grid.set({ status: 'ready', projects }),
+        next: projects => {
+          this.grid.set({ status: 'ready', projects });
+          // the 3D screen mirrors these titles in `ls ~/projects`
+          this.sync.setWorkProjects(projects.map(p => p.title));
+        },
         error: error =>
           this.grid.set({
             status: 'error',
