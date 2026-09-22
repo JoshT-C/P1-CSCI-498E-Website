@@ -644,7 +644,7 @@ a:hover {
   height: 18px;
   border-radius: 4px;
   background: #d8d2c6;
-  transition: background-color 200ms ease, width 200ms ease;
+  transition: background-color 200ms ease;
 }
 
 .stack-bars .bar:nth-child(1) { width: 62%; }

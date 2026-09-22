@@ -42,5 +42,9 @@ Thumbs.db
 .claude/
 .codex/
 
+# Impeccable detector: shared config is committed; per-machine state is not
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+
 # Logs
 *.log
