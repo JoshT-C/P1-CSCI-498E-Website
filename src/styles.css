@@ -867,6 +867,17 @@ html.js .term__screen.is-typing {
   gap: var(--sp-2);
 }
 
+/* Tall enough that its top reaches the page's center band (45-55% viewport
+   height) when the page is scrolled to the end — the band is what drives
+   the 3D screen, and the screen must show the GitHub handle where the
+   page ends. At any viewport height the top lands at 0.3vh minus the
+   footer, which is inside or above the band. */
+#contact {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+}
+
 /* ---- Footer ---- */
 .site-footer {
   border-top: 1px solid var(--hairline);

@@ -2,9 +2,11 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  INJECTOR,
   OnDestroy,
   PLATFORM_ID,
-  inject
+  inject,
+  type Injector
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CapabilityService } from '../../services/capability.service';
@@ -30,6 +32,9 @@ import type { SceneHandle } from '../../../scenes/bootstrap';
 export class SceneCanvasComponent implements AfterViewInit, OnDestroy {
   private readonly capability = inject(CapabilityService);
   private readonly sync = inject(SceneSyncService);
+  // Captured here (a valid injection context) and passed to the lazy scene,
+  // which runs from an import .then callback where inject() would throw.
+  private readonly injector = inject<Injector>(INJECTOR);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private handle: SceneHandle | null = null;
@@ -45,10 +50,15 @@ export class SceneCanvasComponent implements AfterViewInit, OnDestroy {
         this.handle = bootstrap.createScene({
           host,
           sync: this.sync,
+          injector: this.injector,
           onDowngrade: reason => this.capability.downgrade(reason)
         });
       })
-      .catch(() => this.capability.downgrade('scene-load-fail'));
+      .catch((err: unknown) => {
+        // the downgrade is the recovery; the warning keeps the cause visible
+        console.warn('[scene] 3D failed to start, using CSS fallback:', err);
+        this.capability.downgrade('scene-load-fail');
+      });
   }
 
   ngOnDestroy(): void {

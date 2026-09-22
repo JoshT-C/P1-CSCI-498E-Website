@@ -8,7 +8,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "audit:dist": "node scripts/audit-dist.mjs"
+    "audit:dist": "node scripts/audit-dist.mjs",
+    "audit:browser": "node scripts/audit-browser.mjs",
+    "audit": "npm run audit:dist && npm run audit:browser"
   },
   "prettier": {
     "overrides": [
@@ -44,6 +46,7 @@
     "eslint": "^10.6.0",
     "istanbul-lib-instrument": "^6.0.3",
     "jsdom": "^30.0.1",
+    "playwright": "^1.63.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.62.1",
     "vitest": "^4.0.8"

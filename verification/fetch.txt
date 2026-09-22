@@ -1,0 +1,78 @@
+# fetch.txt — provenance for the About copy
+
+Source:  https://github.com/JoshT-C  (public GitHub profile README)
+Raw URL: https://raw.githubusercontent.com/JoshT-C/JoshT-C/main/README.md
+Fetched: 2026-09-22 (initial fetch 2026-09-21)
+
+Purpose: The About section's copy is derived from this public profile README.
+         This file records the source so it is clear the bio, experience, and
+         skills are the owner's own public words, not invented.
+
+Note:    The profile's contact badges (LinkedIn, email, previous site) are
+         omitted below on purpose — this site is GitHub-only by decision and
+         publishes no email address and no LinkedIn link.
+
+--- verbatim profile README, contact badges omitted ---
+
+# Joshua Tuominen-Collins
+
+## 💻 Computer Science Student | Colorado School of Mines
+
+[CONTACT BADGES OMITTED — see note above]
+
+I'm a computer science enthusiast who solves problems by building: my own Proxmox homelab, the server infrastructure behind a 600-member student community, and Kubernetes platforms and LLM agents across two internship summers. I like understanding complex systems, from zero-trust authentication to agentic AI, well enough to run them, secure them, and explain them.
+
+## 🎓 Education
+
+**Colorado School of Mines** | B.S. Computer Science (Expected 2027)
+
+- GPA: 3.69
+- Thorson First-Year Honors, McBride Honors Program, Dean's List, Honor Roll
+- Principal French Horn, Mines Orchestra
+
+## 💼 Professional Experience
+
+### Software Engineering Intern | Parsons Corporation
+
+*Summers 2025 & 2026*
+
+- Architected a containerized microservice platform (Angular, Spring Boot, FastAPI, PostgreSQL) and led its migration to Kubernetes, scaling single-node capacity from 10 to 1,000 concurrent users
+- Stood up Keycloak authentication from scratch and implemented a zero-trust edge with OAuth2 Proxy and certificate-based auth
+- Built the Jenkins CI/CD pipeline with cached, parallelized container builds, cutting build times by more than half; wrote a Playwright E2E suite plus 200+ tests
+- Returned in a senior role: authored the team's documentation and migration guides, delivered product demos, and advised senior engineers on Kubernetes and Keycloak adoption
+
+### Software Engineering Field Session (Client Project) | Kinective
+
+*May – Jun 2026*
+
+- On a 4-person team, delivered a conversational AI agent (Claude on AWS Bedrock, MCP tools) that lets non-technical users build business workflows inside Kinective's enterprise low-code platform
+- Designed the system prompt for an automated testing agent that independently re-verifies the workflow agent's end-to-end output
+- Authored the benchmark prompt suite and advised on prompt structure during optimization that cut per-workflow LLM cost from roughly $12–15 to under $3
+
+## 💡 Technical Skills
+
+- **Languages**: Java, Python, C++, C, TypeScript/JavaScript, SQL, Bash, Lua
+- **Backend & Frameworks**: Spring Boot, Angular, FastAPI, Maven, PostgreSQL, MySQL
+- **Infrastructure & DevOps**: Kubernetes, Helm, Docker, Traefik, Nginx, Jenkins, Proxmox, Grafana, Prometheus, Git, Linux
+- **Identity & Security**: Keycloak, OAuth2/OIDC, JWT, OAuth2 Proxy, SSO, zero-trust edge auth
+- **AI/LLM**: Claude (AWS Bedrock), Model Context Protocol (MCP), prompt engineering, agent evaluation
+- **Testing**: Playwright, k6
+
+## 🚀 Leadership & Community
+
+### President & Lead Server Administrator | Minecraft at Mines
+
+*Aug 2023 – Present*
+
+- Lead a 600+ member community and the Proxmox/Ubuntu infrastructure behind it, including a Docker-based platform that provisions on-demand Minecraft servers for students
+- Create, source, and deploy custom Java plugins for community servers
+
+### Vice President of Advocacy | oSTEM at Mines
+
+*Aug 2024 – Present*
+
+- Oversee a 440+ member community Discord and the chapter's advocacy resources; advise Mines DI&A on SafeZONE training
+
+---
+
+*I'm passionate about server infrastructure, identity and access management, and building community through technology. Always looking to collaborate; if you're building something interesting, reach out.*

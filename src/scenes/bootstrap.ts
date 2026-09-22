@@ -12,7 +12,7 @@
  * chunk itself failing to load.
  */
 import * as THREE from 'three';
-import type { Signal } from '@angular/core';
+import type { Injector, Signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import type { Subscription } from 'rxjs';
 import { cameraPose, SCREEN_CENTER } from './camera-path';
@@ -49,6 +49,11 @@ export interface SceneHandle {
 export interface CreateSceneOptions {
   host: HTMLElement;
   sync: SceneSyncSource;
+  /** The component's injector: toObservable() would otherwise call
+   *  inject(Injector) internally, which throws outside an injection
+   *  context (this runs from a dynamic-import .then callback). Binding
+   *  the effects to it also cleans them up with the component. */
+  injector: Injector;
   onDowngrade: (reason: string) => void;
 }
 
@@ -67,7 +72,7 @@ const DEAD_HANDLE: SceneHandle = {
 };
 
 export function createScene(options: CreateSceneOptions): SceneHandle {
-  const { host, sync, onDowngrade } = options;
+  const { host, sync, injector, onDowngrade } = options;
 
   let disposed = false;
   let degraded = false;
@@ -139,16 +144,16 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     modelIndex: -1
   };
   const subs: Subscription[] = [
-    toObservable(sync.activeSection).subscribe(v => {
+    toObservable(sync.activeSection, { injector }).subscribe(v => {
       if (SECTIONS.has(v)) state.section = v as ScreenSection;
     }),
-    toObservable(sync.workProjects).subscribe(v => {
+    toObservable(sync.workProjects, { injector }).subscribe(v => {
       state.projects = v;
     }),
-    toObservable(sync.activeWorkIndex).subscribe(v => {
+    toObservable(sync.activeWorkIndex, { injector }).subscribe(v => {
       state.workIndex = v;
     }),
-    toObservable(sync.activeModelIndex).subscribe(v => {
+    toObservable(sync.activeModelIndex, { injector }).subscribe(v => {
       state.modelIndex = v;
     })
   ];

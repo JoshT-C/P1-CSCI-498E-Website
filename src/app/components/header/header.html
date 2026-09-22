@@ -2,10 +2,10 @@
   <div class="site-header-inner">
     <a class="brand" href="#top">Joshua T-C</a>
     <nav class="site-nav" aria-label="Sections">
-      <a href="#work">Work</a>
-      <a href="#stack">AI Stack</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
+      <a href="#work" [attr.aria-current]="activeSection() === 'work' ? 'true' : null">Work</a>
+      <a href="#stack" [attr.aria-current]="activeSection() === 'stack' ? 'true' : null">AI Stack</a>
+      <a href="#about" [attr.aria-current]="activeSection() === 'about' ? 'true' : null">About</a>
+      <a href="#contact" [attr.aria-current]="activeSection() === 'contact' ? 'true' : null">Contact</a>
     </nav>
   </div>
 </header>
