@@ -94,6 +94,9 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Runs on the SSR/prerender server too, where rAF does not exist; the
+    // browser-only rAF/io were never started there (ngAfterViewInit bails).
+    if (!isPlatformBrowser(this.platformId)) return;
     this.io?.disconnect();
     cancelAnimationFrame(this.raf);
   }
