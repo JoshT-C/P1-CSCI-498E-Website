@@ -9,6 +9,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RevealDirective } from '../../directives/reveal.directive';
 import { TERMINAL } from '../../services/content/projects';
+import { SCREEN_MAX_COLS } from '../../../scenes/screen-content';
 import {
   createTerminal,
   type ScreenSnapshot,
@@ -27,7 +28,7 @@ function createHeroTerminal(platformId: object): Terminal {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   return createTerminal({
     maxLines: 10,
-    maxCols: 36,
+    maxCols: SCREEN_MAX_COLS,
     charsPerSecond: 45,
     linePauseMs: 320,
     static: reduced

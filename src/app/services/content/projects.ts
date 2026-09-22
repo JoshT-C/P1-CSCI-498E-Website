@@ -131,24 +131,27 @@ export interface TerminalLine {
  * Keep every line to 36 columns or fewer: the screen-text machine will
  * truncate longer ones, but the copy should fit on its own.
  */
+/** The `user@host:~$` prompt rendered in the accent color. */
+export const TERMINAL_PROMPT = 'joshua@t-c:~$';
+
 export const TERMINAL: Record<'hero' | 'about' | 'contact', readonly TerminalLine[]> = {
   hero: [
-    { prompt: 'joshua@t-c:~$', text: 'cat /etc/whoami' },
+    { prompt: TERMINAL_PROMPT, text: 'cat /etc/whoami' },
     { text: 'Joshua T-C' },
-    { prompt: 'joshua@t-c:~$', text: 'cat /etc/pronouns' },
+    { prompt: TERMINAL_PROMPT, text: 'cat /etc/pronouns' },
     { text: 'any / all' },
-    { prompt: 'joshua@t-c:~$', text: 'echo $STATUS' },
+    { prompt: TERMINAL_PROMPT, text: 'echo $STATUS' },
     { text: 'metaphysical exile' }
   ],
   about: [
-    { prompt: 'joshua@t-c:~$', text: 'cat about.md' },
+    { prompt: TERMINAL_PROMPT, text: 'cat about.md' },
     { text: 'CS student, Colorado School of Mines' },
     { text: 'Builds: homelab, community infra,' },
     { text: 'k8s, zero-trust auth, LLM agents' },
     { text: 'Runs four LLMs on one local GPU.' }
   ],
   contact: [
-    { prompt: 'joshua@t-c:~$', text: 'contact --help' },
+    { prompt: TERMINAL_PROMPT, text: 'contact --help' },
     { text: 'No email published.' },
     { text: 'github.com/JoshT-C' }
   ]
