@@ -1,0 +1,15 @@
+.git
+.gitignore
+.angular
+node_modules
+dist
+coverage
+.claude
+.codex
+.env
+*.log
+verification
+deploy/RUNBOOK.md
+README.md
+RESOURCES.md
+DECISIONS.md

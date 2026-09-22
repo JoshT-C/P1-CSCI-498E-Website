@@ -1,0 +1,78 @@
+<section id="work" class="section" aria-labelledby="work-title">
+  <div class="section-inner">
+    <p class="section-kicker" appReveal>selected work</p>
+    <h2 id="work-title" class="section-title" appReveal>
+      Two things I point people at by hand
+    </h2>
+    <p class="lede" appReveal>
+      …and then the live feed of everything else public on GitHub.
+    </p>
+
+    <article class="work-featured" work-index="0" appReveal>
+      <div>
+        <h3>{{ curated[0].title }}</h3>
+        <p class="card-tag">{{ curated[0].tagline }}</p>
+      </div>
+      <div>
+        <p>{{ curated[0].body }}</p>
+        <p class="card-meta" style="margin-top: 0">{{ curated[0].tags.join(' · ') }}</p>
+      </div>
+      <a class="btn" [href]="curated[0].href">{{ curated[0].hrefLabel }}</a>
+    </article>
+
+    <div class="card-grid">
+      @for (project of curated.slice(1); track project.id) {
+        <article class="card" work-index="1" appReveal>
+          <div class="card-head">
+            <h3 class="card-title">
+              <a [href]="project.href" rel="noopener">{{ project.title }}</a>
+            </h3>
+            <span class="card-tag">{{ project.tagline }}</span>
+          </div>
+          <p class="card-desc">{{ project.body }}</p>
+          <div class="card-meta">
+            <span>{{ project.tags.join(' · ') }}</span>
+            <a [href]="project.href" rel="noopener">{{ project.hrefLabel }} ↗</a>
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="grid-label" appReveal>
+      <h3>More on GitHub</h3>
+      <a class="card-tag" [href]="'https://github.com/' + username" rel="noopener">{{ '@' + username }} ↗</a>
+    </div>
+
+    @if (grid().status === 'loading') {
+      <div class="skeleton-grid" aria-hidden="true">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      </div>
+      <p class="visually-hidden">Loading projects from GitHub…</p>
+    } @else if (grid().status === 'error') {
+      <div class="grid-error" role="alert">
+        <p class="mono" style="margin: 0">{{ grid().error }}</p>
+        <button class="btn" type="button" (click)="retry()">Try again</button>
+      </div>
+    } @else {
+      <div class="card-grid">
+        @for (project of grid().projects; track project.id) {
+          <article class="card">
+            <div class="card-head">
+              <h3 class="card-title">
+                <a [href]="project.githubUrl" rel="noopener">{{ project.title }}</a>
+              </h3>
+              <span class="card-tag">{{ project.language }}</span>
+            </div>
+            <p class="card-desc">{{ project.description }}</p>
+            <div class="card-meta">
+              <span>{{ project.stars }}★ · {{ project.forks }} forks · {{ project.status }} · updated {{ project.lastUpdated | date: 'MMM yyyy' }}</span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>

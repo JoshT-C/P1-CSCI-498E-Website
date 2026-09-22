@@ -42,7 +42,7 @@ If it genuinely never happened, say so plainly, and then say what you would have
 check in order to notice. Being honest here costs you far less than a story you cannot
 defend when you record your video.
 
-*Your answer here.*
+1. One immediate item I had to correct for my agent, ran locally using the Claude Code Harness was to instruct it to avoid spawning more than one sub-agent at a time, as it tried spawning multiple at once from the start causing a system resource crash.
 
 ---
 

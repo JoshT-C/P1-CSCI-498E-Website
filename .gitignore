@@ -1,2 +1,46 @@
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+/*.iml
+/.vscode/
+
+# Angular
+/.angular/cache
+
+# Miscellaneous
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+/libnode_modules
+/node_modules
+/bower_components
+/.angular
+/.cli
 .DS_Store
 Thumbs.db
+
+# Env (server-side only — never commit the live domain config)
+.env
+
+# Personal agent tooling config (not part of the site)
+.claude/
+.codex/
+
+# Logs
+*.log
