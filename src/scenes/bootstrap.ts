@@ -21,7 +21,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { CAMERA_TAU_MS, DPR_CAP, FONT_WAIT_MS, FPS_BUDGET, WARMUP } from '../app/config/scene.config';
+import { CAMERA_TAU_MS, FONT_WAIT_MS, RENDER, WARMUP } from '../app/config/scene.config';
+import { govern, INITIAL_GOVERNOR, renderPixelRatio, type GovernorState } from './governor';
 import { SCENE_TYPING } from '../app/config/terminal.config';
 import { SITE_SECTIONS, type SiteSection } from '../app/config/site.config';
 import { fitPose, fovForAspect, PORTAL_AT, STATION_POSES, spinePose, type CameraPose, type FittedShot, type Vec3 } from './camera-path';
@@ -100,7 +101,6 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     onDowngrade('webgl-fail');
     return DEAD_HANDLE;
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, DPR_CAP[tier]));
   // The room's light is baked in Blender and its atlases are already
   // tone-mapped (AgX); mapping them again here would crush them twice.
   renderer.toneMapping = THREE.NoToneMapping;
@@ -134,10 +134,17 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   let bloom: UnrealBloomPass | null = null;
   let film: ShaderPass | null = null;
   if (tier === 'room') {
-    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+    // 2x MSAA: on an integrated GPU the 4x half-float target alone cost
+    // more than the room; at 2x the edges hold up, the governor's lower
+    // render scales included
+    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 2 });
     composer = new EffectComposer(renderer, target);
     composer.addPass(new RenderPass(scene, camera));
     bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.38, 0.35, 1.0);
+    // The glow is a wide blur: at a quarter of the frame's resolution (its
+    // default is half) it looks the same and its blur passes cost a quarter.
+    const bloomSetSize = bloom.setSize.bind(bloom);
+    bloom.setSize = (w: number, h: number): void => bloomSetSize(Math.max(1, w / 2), Math.max(1, h / 2));
     composer.addPass(bloom);
     film = new ShaderPass(FilmShader);
     composer.addPass(film);
@@ -263,18 +270,39 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       laptop: paddedCorners(['screen_laptop'], 1.8)
     };
   };
+  // Render resolution: the tier's pixel budget, times the governor's scale.
+  let governor: GovernorState = INITIAL_GOVERNOR;
+  const applyResolution = (): void => {
+    const ratio = renderPixelRatio(window.devicePixelRatio, width, height, tier, governor.scale);
+    renderer.setPixelRatio(ratio);
+    renderer.setSize(width, height, false);
+    if (composer) {
+      composer.setPixelRatio(ratio);
+      composer.setSize(width, height);
+    }
+  };
   const resize = (): void => {
     width = host.clientWidth || window.innerWidth;
     height = host.clientHeight || window.innerHeight;
-    renderer.setSize(width, height, false);
-    composer?.setSize(width, height);
-    bloom?.resolution.set(width / 2, height / 2);
+    applyResolution();
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     measure();
   };
   resize();
   window.addEventListener('resize', resize);
+  // Leaving or reloading the page: hand the GPU context and its memory back
+  // at once, not whenever the old page is collected (on a GPU shared with
+  // other work that memory is scarce). A page kept in the back/forward
+  // cache (persisted) keeps its room for when the visitor comes back.
+  const onPageHide = (event: PageTransitionEvent): void => {
+    if (event.persisted) return;
+    // taken before dispose(), which lets three.js drop its extensions
+    const lose = renderer.getContext().getExtension('WEBGL_lose_context');
+    dispose();
+    lose?.loseContext();
+  };
+  window.addEventListener('pagehide', onPageHide);
   const introObserver = new ResizeObserver(measure);
   introObserver.observe(intro);
 
@@ -411,7 +439,6 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   let startedAt = 0;
   let frames = 0;
   let windowMs = 0;
-  let lowStreak = 0;
   let warmupUntil = 0;
 
   const frame = (now: number): void => {
@@ -430,7 +457,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       if (portalInside && !inside) {
         frames = 0;
         windowMs = 0;
-        warmupUntil = now + FPS_BUDGET.warmupMs;
+        warmupUntil = now + RENDER.warmupMs;
       }
       portalInside = inside;
       portalReported = true;
@@ -466,17 +493,20 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       renderer.render(scene, camera);
     }
 
-    // fps budget: only visible, rendering time counts (rAF pauses in
-    // hidden tabs; the dt clamp makes resume safe).
+    // Frame-rate governor: only visible, rendering time counts (rAF pauses
+    // in hidden tabs; the dt clamp makes resume safe). Fewer pixels first,
+    // a lighter tier last (src/scenes/governor.ts).
     frames += 1;
     windowMs += dt;
-    if (windowMs >= FPS_BUDGET.windowMs) {
+    if (windowMs >= RENDER.windowMs) {
       const fps = (frames / windowMs) * 1000;
       frames = 0;
       windowMs = 0;
       if (now >= warmupUntil) {
-        lowStreak = fps < FPS_BUDGET.lowFps ? lowStreak + 1 : 0;
-        if (lowStreak >= FPS_BUDGET.lowStreakNeeded) guard('runtime-fps');
+        const step = govern(governor, fps);
+        governor = step.state;
+        if (step.rescale) applyResolution();
+        if (step.downgrade) guard('runtime-fps');
       }
     }
   };
@@ -485,7 +515,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     if (disposed) return;
     host.appendChild(canvas); // the CSS fade-in runs from the first frame
     lastNow = startedAt = performance.now();
-    warmupUntil = lastNow + FPS_BUDGET.warmupMs;
+    warmupUntil = lastNow + RENDER.warmupMs;
     raf = requestAnimationFrame(frame);
   };
 
@@ -532,6 +562,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     cancelAnimationFrame(raf);
     loading.abort();
     window.removeEventListener('resize', resize);
+    window.removeEventListener('pagehide', onPageHide);
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('click', onClick);
     introObserver.disconnect();

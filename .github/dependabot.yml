@@ -1,10 +1,16 @@
-# Weekly update PRs: npm dependencies, and the SHA-pinned actions in CI.
+# Weekly update PRs: npm dependencies, the SHA-pinned actions in CI, and
+# the Docker base images. Major versions are left to deliberate upgrades:
+# Angular pins its TypeScript and tooling ranges, and odd-numbered Node
+# releases are not long-term support.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       angular:
         patterns: ['@angular/*', '@angular-devkit/*', 'angular-eslint']
@@ -18,3 +24,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']

@@ -121,6 +121,9 @@ export default defineConfig<SuiteOptions>({
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: external ?? `http://127.0.0.1:${port}`,
+    // pinned: CI's Windows runners report reduced motion, which turns the
+    // login and smooth scrolling off; the reduced-motion tests set it
+    reducedMotion: 'no-preference',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },

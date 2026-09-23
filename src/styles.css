@@ -373,6 +373,12 @@ a:hover {
   background: radial-gradient(55% 45% at 72% 44%, rgba(102, 242, 166, 0.06), transparent 70%);
 }
 
+/* the name in the header links here (#top): land at the true top, not
+   at the section's edge under the sticky header */
+.intro {
+  scroll-margin-top: var(--header-h);
+}
+
 :root[data-render='3d'] .intro {
   height: var(--intro-run);
   /* The shell overlaps the last screen of the walk, so the page ends where

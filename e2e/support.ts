@@ -142,7 +142,12 @@ export class Site {
 
   /** Wait for the shell to be fully on screen (it fades in over 450 ms). */
   async shellShown(): Promise<void> {
-    await expect.poll(async () => (await this.state()).shellVisible, { timeout: t(15_000) }).toBe(true);
+    try {
+      await expect.poll(async () => (await this.state()).shellVisible, { timeout: t(15_000) }).toBe(true);
+    } catch {
+      // say why: a CI log is all there is to go on
+      throw new Error(`the shell never showed; page state: ${JSON.stringify(await this.state())}`);
+    }
   }
 
   async state(): Promise<ShellState> {

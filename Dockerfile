@@ -8,8 +8,9 @@ RUN npm ci
 
 COPY . .
 # outputMode: "static" prerenders the page, so the browser/ output is
-# a complete, servable static site.
-RUN npx ng build
+# a complete, servable static site; the build also writes .gz copies for
+# nginx's gzip_static.
+RUN npm run build
 
 # ---- Serve stage: hardened, non-root nginx ----
 FROM nginx:1.29-alpine
