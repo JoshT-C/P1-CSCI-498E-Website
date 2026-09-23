@@ -9,8 +9,9 @@ Purpose: The About section's copy is derived from this public profile README.
          skills are the owner's own public words, not invented.
 
 Note:    The profile's contact badges (LinkedIn, email, previous site) are
-         omitted below on purpose — this site is GitHub-only by decision and
-         publishes no email address and no LinkedIn link.
+         omitted below on purpose. The site's contact output lists the email
+         address and GitHub the owner chose to publish (2026-09-22); it has no
+         LinkedIn link.
 
 --- verbatim profile README, contact badges omitted ---
 

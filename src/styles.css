@@ -85,6 +85,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* no elastic overscroll: at the end of the page the shell is the last
+     thing on screen, and a touchpad bounce showed blank space under it */
+  overscroll-behavior-y: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -387,13 +390,20 @@ app-shell {
 :root[data-render='3d'] .shell {
   position: sticky;
   bottom: 0;
-  transition: opacity 450ms ease, visibility 0s;
-}
-
-:root[data-render='3d'][data-portal='out'] .shell {
   opacity: 0;
   visibility: hidden;
   transition: opacity 450ms ease, visibility 0s linear 450ms;
+}
+
+/* Shown only on the scene's word that the camera is through the glass —
+   not merely until it says otherwise: between the page switching to 3D
+   and the scene's first frame, the server-rendered session would cover
+   the room. If the scene cannot start, the tier drops to flat, where the
+   shell is ordinary page content. */
+:root[data-render='3d'][data-portal='in'] .shell {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 450ms ease, visibility 0s;
 }
 
 /* the desk tier starts closer, so the walk is shorter */
