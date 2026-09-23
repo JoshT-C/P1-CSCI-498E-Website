@@ -1166,6 +1166,10 @@ html.js .term__screen.is-typing {
   margin-bottom: var(--sp-1);
 }
 
+.spec-list + .panel-prose {
+  margin-top: var(--sp-2);
+}
+
 .node__role {
   margin-top: var(--sp-1);
   color: var(--ink-soft);

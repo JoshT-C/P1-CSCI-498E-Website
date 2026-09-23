@@ -24,9 +24,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { CAMERA_TAU_MS, DPR_CAP, FONT_WAIT_MS, FPS_BUDGET, WARMUP } from '../app/config/scene.config';
 import { SCENE_TYPING } from '../app/config/terminal.config';
 import { SITE_SECTIONS, type SiteSection } from '../app/config/site.config';
-import { fovForAspect, PORTAL_AT, STATION_POSES, spinePose, type CameraPose } from './camera-path';
+import { fitPose, fovForAspect, PORTAL_AT, STATION_POSES, spinePose, type CameraPose, type FittedShot, type Vec3 } from './camera-path';
 import { loadRoom, type Room, type Tier } from './room';
-import { anchor, isStationId, type StationId } from './room/layout';
+import { isStationId, ROOM_MAX, ROOM_MIN, type StationId } from './room/layout';
 import { buildScreenLines, SCREEN_MAX_COLS } from './screen-content';
 import { createTerminal } from './screen-text';
 import { FilmShader } from './shaders/film';
@@ -188,35 +188,78 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   let introRun = 1;
   let width = 1;
   let height = 1;
-  /** The opening shot's sideways shift (see aimCamera), from the intro
-   *  pane's right edge and where the whiteboard lands on screen. */
-  let introOffset = 0;
-  const probe = new THREE.PerspectiveCamera();
-  const corner = new THREE.Vector3();
+  // Shots re-framed for the viewport (fitPose): the opening shot must hold
+  // the props right of the intro pane, and each station its prop left of
+  // the panel. Null keeps the fixed pose (phones, or before the room loads).
+  let openShot: FittedShot | null = null;
+  const stationShots: Partial<Record<StationId, FittedShot>> = {};
   const measure = (): void => {
     const rect = intro.getBoundingClientRect();
     introTop = rect.top + window.scrollY;
     introRun = Math.max(rect.height - window.innerHeight, 1);
-    const paneRight = intro.querySelector('.intro__panel')?.getBoundingClientRect().right ?? 0;
-    // Centre the room in the space right of the pane — unless that would
-    // slide the whiteboard (the room's left-most prop in the opening shot)
-    // under the pane: then shift only as far as keeps it 24px clear.
-    const start = spinePose(0, tier);
-    probe.fov = fovForAspect(start.fov, width / height);
-    probe.aspect = width / height;
-    probe.position.set(start.position.x, start.position.y, start.position.z);
-    probe.lookAt(start.target.x, start.target.y, start.target.z);
-    probe.updateMatrixWorld();
-    probe.updateProjectionMatrix();
-    const wb = anchor('whiteboard');
-    let boardLeft = Infinity;
-    for (const dy of [-0.5, 0.5]) {
-      for (const dz of [-0.5, 0.5]) {
-        corner.set(wb.position[0], wb.position[1] + dy * (wb.height ?? 0), wb.position[2] + dz * (wb.width ?? 0)).project(probe);
-        boardLeft = Math.min(boardLeft, ((corner.x + 1) / 2) * width);
+    fitShots();
+  };
+  const fitShots = (): void => {
+    openShot = null;
+    for (const id of Object.keys(stationShots) as StationId[]) delete stationShots[id];
+    if (!room) return;
+    const header = document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0;
+    const bounds = { min: ROOM_MIN, max: ROOM_MAX };
+    const edge = 24;
+    const frame = { width, height, top: header + edge, bottom: height - edge };
+    if (tier === 'room' && width > 900) {
+      const paneRight = intro.querySelector('.intro__panel')?.getBoundingClientRect().right ?? 0;
+      openShot = fitPose(spinePose(0, tier), keyPoints.open, { ...frame, left: paneRight + edge, right: width - edge }, bounds);
+    }
+    if (width > 720) {
+      const panel = Math.min(560, width);
+      for (const [id, points] of Object.entries(keyPoints.stations) as [StationId, Vec3[]][]) {
+        stationShots[id] = fitPose(STATION_POSES[id], points, { ...frame, left: edge, right: width - panel - edge }, bounds, { near: 0.3 });
       }
     }
-    introOffset = Math.max(Math.min(-paneRight / 2, boardLeft - paneRight - 24), -width * 0.35);
+  };
+  /** World-space corners of the props each shot must hold, read off the
+   *  loaded room (pick volumes, screens, the whiteboard, the Thelio's tape).
+   *  Stations use the prop itself where its pick volume is mostly air: the
+   *  disks, not the cubby; the laptop's screen, not the box around it. */
+  const keyPoints: { open: Vec3[]; stations: Partial<Record<StationId, Vec3[]>> } = { open: [], stations: {} };
+  const boxCorners = (box: THREE.Box3): Vec3[] =>
+    [box.min.x, box.max.x].flatMap(x => [box.min.y, box.max.y].flatMap(y => [box.min.z, box.max.z].map(z => ({ x, y, z }))));
+  const find = (t: string | THREE.Object3D): THREE.Object3D | undefined =>
+    typeof t === 'string' ? room?.group.getObjectByName(t) : t;
+  /** Each target's own box corners (a union box would claim empty space
+   *  between props and frame the shot too wide). */
+  const cornersOf = (targets: readonly (string | THREE.Object3D)[]): Vec3[] =>
+    targets.flatMap(t => {
+      const obj = find(t);
+      return obj ? boxCorners(new THREE.Box3().setFromObject(obj)) : [];
+    });
+  /** One box around all the targets, grown `pad` times about its centre,
+   *  so a small prop is framed with some of its surroundings. */
+  const paddedCorners = (targets: readonly (string | THREE.Object3D)[], pad: number): Vec3[] => {
+    const box = new THREE.Box3();
+    for (const t of targets) {
+      const obj = find(t);
+      if (obj) box.expandByObject(obj);
+    }
+    if (box.isEmpty()) return [];
+    const c = box.getCenter(new THREE.Vector3());
+    box.min.sub(c).multiplyScalar(pad).add(c);
+    box.max.sub(c).multiplyScalar(pad).add(c);
+    return boxCorners(box);
+  };
+  const collectKeyPoints = (): void => {
+    room?.group.updateMatrixWorld(true);
+    keyPoints.open = cornersOf([
+      'whiteboard_surface', 'screen_monitor_big', 'screen_monitor_mid', 'tape_thelio',
+      'hit_rack', 'hit_terminal', 'hit_laptop', 'hit_floppies'
+    ]);
+    keyPoints.stations = {
+      rack: cornersOf(['hit_rack']),
+      floppies: paddedCorners(room?.floppies.hitboxes ?? ['hit_floppies'], 1.3),
+      whiteboard: cornersOf(['whiteboard_surface']),
+      laptop: paddedCorners(['screen_laptop'], 1.8)
+    };
   };
   const resize = (): void => {
     width = host.clientWidth || window.innerWidth;
@@ -298,7 +341,8 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     position: new THREE.Vector3(),
     target: new THREE.Vector3(),
     fov: 50,
-    offset: 0
+    offset: 0,
+    offsetY: 0
   };
   const want = { position: new THREE.Vector3(), target: new THREE.Vector3() };
   const initial = spinePose(0, tier);
@@ -310,10 +354,12 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   let portalReported = false;
   let lastFov = -1;
   let lastOffset = -1;
+  let lastOffsetY = -1;
 
   const aimCamera = (dt: number): boolean => {
     const station = state.station;
-    const pose: CameraPose = station ? STATION_POSES[station] : spinePose(spineP, tier);
+    const fitted = station ? stationShots[station] : null;
+    const pose: CameraPose = station ? (fitted?.pose ?? STATION_POSES[station]) : spinePose(spineP, tier, openShot?.pose);
     want.position.set(pose.position.x, pose.position.y, pose.position.z);
     want.target.set(pose.target.x, pose.target.y, pose.target.z);
     // A hand-held drift in the wide shot; none once you are at the desk.
@@ -327,25 +373,32 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     cur.position.lerp(want.position, k);
     cur.target.lerp(want.target, k);
     cur.fov += (fovForAspect(pose.fov, camera.aspect) - cur.fov) * k;
-    // Keep the prop clear of the DOM: with a panel open (right side) frame
-    // it left of centre; in the opening shot the room sits right of the
-    // intro pane (introOffset), easing out as the camera walks in.
-    let wantOffset = 0;
-    if (width > 900) {
-      if (station) wantOffset = width * 0.2;
-      else if (spineP < PICKABLE_UNTIL) wantOffset = introOffset * (1 - spineP / PICKABLE_UNTIL);
+    // Keep the prop clear of the DOM: a fitted shot carries the shift that
+    // centres its props beside the panel or the intro pane (the opening
+    // one easing out as the camera walks in); unfitted, a panel open on the
+    // right frames the prop left of centre.
+    let wantX = 0;
+    let wantY = 0;
+    if (station) {
+      if (fitted) [wantX, wantY] = [fitted.offsetX, fitted.offsetY];
+      else if (width > 900) wantX = width * 0.2;
+    } else if (openShot && spineP < PICKABLE_UNTIL) {
+      const ease = 1 - spineP / PICKABLE_UNTIL;
+      [wantX, wantY] = [openShot.offsetX * ease, openShot.offsetY * ease];
     }
-    cur.offset += (wantOffset - cur.offset) * k;
+    cur.offset += (wantX - cur.offset) * k;
+    cur.offsetY += (wantY - cur.offsetY) * k;
 
     camera.position.copy(cur.position);
     camera.lookAt(cur.target);
-    if (Math.abs(cur.fov - lastFov) > 1e-3 || Math.abs(cur.offset - lastOffset) > 0.5) {
+    if (Math.abs(cur.fov - lastFov) > 1e-3 || Math.abs(cur.offset - lastOffset) > 0.5 || Math.abs(cur.offsetY - lastOffsetY) > 0.5) {
       camera.fov = cur.fov;
-      if (Math.abs(cur.offset) > 0.5) camera.setViewOffset(width, height, cur.offset, 0, width, height);
+      if (Math.abs(cur.offset) > 0.5 || Math.abs(cur.offsetY) > 0.5) camera.setViewOffset(width, height, cur.offset, cur.offsetY, width, height);
       else camera.clearViewOffset();
       camera.updateProjectionMatrix();
       lastFov = cur.fov;
       lastOffset = cur.offset;
+      lastOffsetY = cur.offsetY;
     }
     return cur.position.distanceToSquared(want.position) < 1e-7;
   };
@@ -444,6 +497,14 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       }
       room = loaded;
       scene.add(loaded.group);
+      collectKeyPoints();
+      fitShots();
+      // open on the fitted shot rather than drifting into it
+      if (openShot && state.station === null) {
+        const p = spinePose(spineP, tier, openShot.pose);
+        cur.position.set(p.position.x, p.position.y, p.position.z);
+        cur.target.set(p.target.x, p.target.y, p.target.z);
+      }
       loaded.floppies.select(state.floppy);
       showSelection();
       start();

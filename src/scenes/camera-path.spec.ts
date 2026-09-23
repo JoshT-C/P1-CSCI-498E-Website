@@ -6,6 +6,7 @@ import {
   SCREEN_VIEW,
   STATION_POSES,
   blendPose,
+  fitPose,
   spinePose,
   type CameraPose,
   type Vec3
@@ -106,5 +107,40 @@ describe('camera-path', () => {
   it('hands over to the DOM between the screen view and the portal', () => {
     expect(PORTAL_AT).toBeGreaterThan(0.8);
     expect(PORTAL_AT).toBeLessThan(1);
+  });
+
+  describe('fitPose', () => {
+    // a 1 m square of points 3 m in front of a camera looking down -z
+    const base: CameraPose = { position: { x: 0, y: 1, z: 3 }, target: { x: 0, y: 1, z: 0 }, fov: 50 };
+    const square: Vec3[] = [-0.5, 0.5].flatMap(x => [-0.5, 0.5].map(y => ({ x, y: 1 + y, z: 0 })));
+    const bounds = { min: { x: -5, y: 0, z: -5 }, max: { x: 5, y: 3, z: 5 } };
+    const full = { width: 1600, height: 900, left: 0, right: 1600, top: 0, bottom: 900 };
+
+    it('moves in on a roomy screen and keeps the points in frame', () => {
+      const shot = fitPose(base, square, full, bounds);
+      expect(shot.fits).toBe(true);
+      expect(shot.pose.position.z).toBeLessThan(base.position.z);
+      expect(shot.pose.fov).toBe(base.fov);
+    });
+
+    it('backs off, then widens, as the frame narrows', () => {
+      const narrow = { ...full, left: 1300 };
+      const roomy = fitPose(base, square, full, bounds);
+      const tight = fitPose(base, square, narrow, bounds);
+      expect(tight.fits).toBe(true);
+      expect(tight.pose.position.z).toBeGreaterThan(roomy.pose.position.z);
+      const walled = { min: bounds.min, max: { ...bounds.max, z: 3.2 } };
+      const wide = fitPose(base, square, { ...full, left: 1350 }, walled);
+      expect(wide.fits).toBe(true);
+      expect(wide.pose.position.z).toBeLessThanOrEqual(3.2 - 0.15 + 1e-9);
+      expect(wide.pose.fov).toBeGreaterThan(base.fov);
+    });
+
+    it('offsets the view to centre the points in the frame', () => {
+      const shot = fitPose(base, square, { ...full, left: 800 }, bounds);
+      // points are centred on the axis (x = 800 px); the frame centre is 1200
+      expect(shot.offsetX).toBeCloseTo(-400, 0);
+      expect(shot.offsetY).toBeCloseTo(0, 0);
+    });
   });
 });

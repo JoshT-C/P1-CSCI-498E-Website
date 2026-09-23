@@ -136,8 +136,9 @@ export function clampUnit(p: number): number {
  * through the keys (a lerp reads as a slider; the curve reads as a person
  * walking up to a desk); targets and fov ease per segment.
  */
-export function spinePose(p: number, tier: 'room' | 'desk' = 'room'): CameraPose {
-  const SPINE = tier === 'room' ? ROOM_SPINE : DESK_SPINE;
+export function spinePose(p: number, tier: 'room' | 'desk' = 'room', start?: CameraPose): CameraPose {
+  // `start` replaces the opening shot (re-framed for the viewport by fitPose)
+  const SPINE = start ? spine(start) : tier === 'room' ? ROOM_SPINE : DESK_SPINE;
   const t = clampUnit(p);
   if (t === 0) return SPINE[0].pose;
   if (t === 1) return SPINE[SPINE.length - 1].pose;
@@ -179,3 +180,112 @@ export function fovForAspect(fov: number, aspect: number): number {
 
 /** Spine fraction past which the glass fills the frame and the DOM takes over. */
 export const PORTAL_AT = 0.94;
+
+/** The part of the viewport a shot must fit in, in CSS pixels. */
+export interface ShotFrame {
+  readonly width: number;
+  readonly height: number;
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+export interface FittedShot {
+  readonly pose: CameraPose;
+  /** For camera.setViewOffset: shifts that centre the points in the frame. */
+  readonly offsetX: number;
+  readonly offsetY: number;
+  /** False when even the widest candidate could not hold every point. */
+  readonly fits: boolean;
+}
+
+const sub = (a: Vec3, b: Vec3): Vec3 => v(a.x - b.x, a.y - b.y, a.z - b.z);
+const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
+const cross = (a: Vec3, b: Vec3): Vec3 => v(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+const norm = (a: Vec3): Vec3 => {
+  const l = Math.hypot(a.x, a.y, a.z) || 1;
+  return v(a.x / l, a.y / l, a.z / l);
+};
+
+/**
+ * Re-aim a pose so every point lands inside `frame`, keeping its angle.
+ *
+ * The camera slides along its line of sight (from `near` metres forward to
+ * as far back as `bounds` allow) and, only once it can go no further back,
+ * widens its fov up to `maxFov`. The first candidate from the front that
+ * holds every point wins, so a roomy screen gets a closer, fuller shot and
+ * a cramped one a wider one. The returned offsets then centre the points in
+ * the frame. Portrait-first framing is not attempted: the caller keeps its
+ * own fallback for phones.
+ */
+export function fitPose(
+  base: CameraPose,
+  points: readonly Vec3[],
+  frame: ShotFrame,
+  bounds: { readonly min: Vec3; readonly max: Vec3 },
+  opts: { readonly near?: number; readonly maxFov?: number; readonly step?: number } = {}
+): FittedShot {
+  const near = opts.near ?? 0.5;
+  const maxFov = opts.maxFov ?? 72;
+  const step = opts.step ?? 0.05;
+  const aspect = frame.width / frame.height;
+  const forward = norm(sub(base.target, base.position));
+  const right = norm(cross(forward, v(0, 1, 0)));
+  const up = cross(right, forward);
+
+  // how far back the camera can go before leaving the room (0.15 m inset)
+  let back = Infinity;
+  for (const axis of ['x', 'y', 'z'] as const) {
+    const d = -forward[axis];
+    if (Math.abs(d) < 1e-6) continue;
+    const limit = d > 0 ? bounds.max[axis] - 0.15 : bounds.min[axis] + 0.15;
+    back = Math.min(back, (limit - base.position[axis]) / d);
+  }
+  back = Math.max(back, 0);
+
+  const usableW = frame.right - frame.left;
+  const usableH = frame.bottom - frame.top;
+  const measure = (position: Vec3, fov: number) => {
+    const t = Math.tan((fov * Math.PI) / 360);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const p of points) {
+      const d = sub(p, position);
+      const z = dot(d, forward);
+      if (z < 0.05) return null; // behind or at the lens
+      const x = (dot(d, right) / (z * t * aspect) + 1) * 0.5 * frame.width;
+      const y = (1 - dot(d, up) / (z * t)) * 0.5 * frame.height;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+    return { minX, maxX, minY, maxY };
+  };
+
+  const shot = (dist: number, fov: number, fits: boolean): FittedShot | null => {
+    const position = add(base.position, forward, -dist);
+    const m = measure(position, fov);
+    if (!m) return null;
+    if (fits && (m.maxX - m.minX > usableW || m.maxY - m.minY > usableH)) return null;
+    return {
+      pose: { position, target: add(base.target, forward, -dist), fov },
+      offsetX: (m.minX + m.maxX) / 2 - (frame.left + frame.right) / 2,
+      offsetY: (m.minY + m.maxY) / 2 - (frame.top + frame.bottom) / 2,
+      fits
+    };
+  };
+
+  for (let dist = -near; dist <= back + 1e-9; dist += step) {
+    const s = shot(Math.min(dist, back), base.fov, true);
+    if (s) return s;
+  }
+  for (let fov = base.fov + 1; fov <= maxFov; fov += 1) {
+    const s = shot(back, fov, true);
+    if (s) return s;
+  }
+  return shot(back, maxFov, false) ?? { pose: base, offsetX: 0, offsetY: 0, fits: false };
+}
