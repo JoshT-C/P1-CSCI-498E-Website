@@ -209,7 +209,9 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     const frame = { width, height, top: header + edge, bottom: height - edge };
     if (tier === 'room' && width > 900) {
       const paneRight = intro.querySelector('.intro__panel')?.getBoundingClientRect().right ?? 0;
-      openShot = fitPose(spinePose(0, tier), keyPoints.open, { ...frame, left: paneRight + edge, right: width - edge }, bounds);
+      // near 0: never closer than the doorway; the shot only steps back
+      // (or widens) when a prop would be cut off
+      openShot = fitPose(spinePose(0, tier), keyPoints.open, { ...frame, left: paneRight + edge, right: width - edge }, bounds, { near: 0 });
     }
     if (width > 720) {
       const panel = Math.min(560, width);
