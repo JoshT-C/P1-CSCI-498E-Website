@@ -54,17 +54,20 @@ export class SceneCanvasComponent {
     inject(DestroyRef).onDestroy(() => this.teardown());
   }
 
-  private teardown(): void {
+  /** `keepPortal`: a swap to another 3D tier keeps the page's portal state
+   *  until the new scene reports its own, so a reader in the shell is not
+   *  shown an empty canvas while the lighter room loads. */
+  private teardown(keepPortal = false): void {
     this.handle?.dispose();
     this.handle = null;
     this.built = 'css';
-    this.sync.setPortal(null);
+    if (!keepPortal) this.sync.setPortal(null);
     this.sync.setHover(null);
   }
 
   private build(tier: Tier): void {
     if (!this.isBrowser || tier === this.built) return;
-    this.teardown();
+    this.teardown(tier !== 'css');
     if (tier === 'css') return;
     this.built = tier;
     import('../../../scenes/bootstrap')

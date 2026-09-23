@@ -53,7 +53,10 @@ export class BootComponent {
 
   constructor() {
     effect(() => {
-      if (this.sync.portal() && !this.played) this.play();
+      const inside = this.sync.portal();
+      if (inside && !this.played) this.play();
+      // left the glass mid-login: the overlay must not cover the room
+      else if (!inside && this.visible()) this.finish(0);
     });
     inject(DestroyRef).onDestroy(() => this.stop());
   }

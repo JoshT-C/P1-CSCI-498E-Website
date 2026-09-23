@@ -425,16 +425,25 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
 
     const inside = state.station === null && spineP >= PORTAL_AT;
     if (inside !== portalInside || !portalReported) {
+      // back out of the glass: the frame rate is measured afresh, after a
+      // warm-up, not against the frames the page drew meanwhile
+      if (portalInside && !inside) {
+        frames = 0;
+        windowMs = 0;
+        warmupUntil = now + FPS_BUDGET.warmupMs;
+      }
       portalInside = inside;
       portalReported = true;
       onPortal(inside);
     }
 
-    const settled = aimCamera(dt);
+    aimCamera(dt);
     pick();
-    // Through the glass and still: the DOM covers the canvas, so skip the
-    // GPU work entirely until something moves again.
-    if (portalInside && settled) return;
+    // Through the glass the shell covers the canvas (hidden by CSS once its
+    // fade ends): no GPU work, and no frame-rate verdict. The shell's glow
+    // is costly to paint, and counting frames here once downgraded the
+    // room while the reader was only using the terminal.
+    if (portalInside) return;
 
     const section = state.station ? 'hero' : state.section;
     if (section !== termState.section || state.projects !== termState.projects) {

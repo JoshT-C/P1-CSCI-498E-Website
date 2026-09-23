@@ -76,6 +76,8 @@ export class ShellService {
   private readonly history: string[] = [];
   private historyAt = 0;
   private typing = 0;
+  /** `exit`'s pending walk back to the room; going back in cancels it. */
+  private leaveTimer = 0;
 
   constructor() {
     if (!this.isBrowser) {
@@ -169,6 +171,7 @@ export class ShellService {
    *  of the page is the camera through the glass. */
   enter(): void {
     const w = this.document.defaultView;
+    w?.clearTimeout(this.leaveTimer);
     const reduced = w?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? true;
     w?.scrollTo({ top: this.document.documentElement.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
     this.focusRequest.update(n => n + 1);
@@ -180,7 +183,9 @@ export class ShellService {
     (this.document.activeElement as HTMLElement | null)?.blur?.();
     const w = this.document.defaultView;
     const reduced = w?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? true;
-    w?.setTimeout(() => w.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' }), 400);
+    if (!w) return;
+    w.clearTimeout(this.leaveTimer);
+    this.leaveTimer = w.setTimeout(() => w.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' }), 400);
   }
 
   private push(input: string, command: Parsed): void {
