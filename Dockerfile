@@ -23,6 +23,7 @@ RUN addgroup -S -g 101 site && adduser -S -u 101 -G site site \
     && touch /var/run/nginx.pid && chown site:site /var/run/nginx.pid
 
 COPY deploy/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/nginx/snippets/ /etc/nginx/snippets/
 COPY deploy/nginx/conf.d/ /etc/nginx/conf.d/
 COPY --from=build /app/dist/jtc-site/browser /usr/share/nginx/html
 

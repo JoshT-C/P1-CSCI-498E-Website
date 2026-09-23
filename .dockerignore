@@ -13,3 +13,7 @@ deploy/RUNBOOK.md
 README.md
 RESOURCES.md
 DECISIONS.md
+art
+e2e
+playwright-report
+test-results
