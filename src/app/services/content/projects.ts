@@ -41,7 +41,7 @@ export const CURATED_PROJECTS: readonly CuratedProject[] = [
     tagline: 'Four language models behind one llama.cpp build.',
     body: 'A llama.cpp server on an RTX 5090 that runs one of four large models at a time. Open WebUI, SearXNG and Docling run beside it. Every service listens only on the loopback interface, so nothing on the machine is reachable from the network.',
     href: '#stack',
-    hrefLabel: 'Models and benchmarks below ↓',
+    hrefLabel: 'ai-stack: the models and their benchmarks',
     tags: ['llama.cpp', 'RTX 5090', 'local-first']
   },
   {

@@ -1,55 +1,48 @@
-<section id="work" class="tty" aria-labelledby="work-title">
-  <div class="tty__inner">
-    <h2 id="work-title" class="visually-hidden">Projects</h2>
-
-    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> ls -l ~joshua/projects</p>
-    <ul class="tty__ls">
-      @for (project of curated; track project.id) {
-        <li>
-          <span class="tty__dim">drwxr-xr-x</span>
-          <a class="tty__link" [href]="project.href" rel="noopener">{{ project.id }}/</a>
-          <span>{{ project.tagline }}</span>
-        </li>
-      }
-    </ul>
-
-    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> cat ~joshua/projects/{{ curated[0].id }}/README</p>
-    <div class="tty__out">
-      <p class="tty__bright">{{ curated[0].title }}</p>
-      <p>{{ curated[0].body }}</p>
-      <p class="tty__dim">tags: {{ curated[0].tags.join(', ') }}</p>
-      <p><a class="tty__link" [href]="curated[0].href">{{ curated[0].hrefLabel }}</a></p>
-    </div>
-
-    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> gh repo list {{ username }} --public --limit {{ limit }}</p>
-    @if (grid().status === 'loading') {
-      <p class="tty__out tty__dim" role="status">fetching repositories from api.github.com<span class="tty__spinner" aria-hidden="true"></span></p>
-    } @else if (grid().status === 'error') {
-      <div class="tty__out" role="alert">
-        <p class="tty__err">error: {{ grid().error }}</p>
-        <p><button class="tty__button" type="button" (click)="retry()">[retry]</button></p>
-      </div>
-    } @else {
-      <table class="tty__table tty__repos">
-        <caption class="visually-hidden">Public repositories on GitHub, most recently updated first</caption>
-        <thead>
-          <tr><th scope="col">name</th><th scope="col">language</th><th scope="col">stars</th><th scope="col">updated</th></tr>
-        </thead>
-        <tbody>
-          @for (project of grid().projects; track project.id) {
-            <tr>
-              <th scope="row"><a class="tty__link" [href]="project.githubUrl" rel="noopener">{{ project.title }}</a></th>
-              <td>{{ project.language }}</td>
-              <td>{{ project.stars }}</td>
-              <td>{{ project.lastUpdated | date: 'yyyy-MM-dd' }}</td>
-            </tr>
-            @if (project.description) {
-              <tr class="tty__desc"><td colspan="4">{{ project.description }}</td></tr>
-            }
-          }
-        </tbody>
-      </table>
-      <p class="tty__out tty__dim">{{ grid().projects.length }} {{ grid().projects.length === 1 ? 'repository' : 'repositories' }}. All of them: <a class="tty__link" [href]="'https://github.com/' + username" rel="noopener">github.com/{{ username }}</a></p>
+<div class="tty__out">
+  <ul class="tty__ls">
+    @for (project of curated; track project.id) {
+      <li>
+        <span class="tty__dim">drwxr-xr-x</span>
+        <a class="tty__link" [href]="project.href" rel="noopener">{{ project.id }}/</a>
+        <span>{{ project.tagline }}</span>
+      </li>
     }
-  </div>
-</section>
+  </ul>
+
+  <p class="tty__sub tty__dim">{{ curated[0].id }}/README</p>
+  <p class="tty__bright">{{ curated[0].title }}</p>
+  <p>{{ curated[0].body }}</p>
+  <p class="tty__dim">tags: {{ curated[0].tags.join(', ') }}</p>
+  <p><a class="tty__link" [href]="curated[0].href">{{ curated[0].hrefLabel }}</a></p>
+
+  <p class="tty__sub tty__dim">public repos on github.com/{{ username }}, newest first</p>
+  @if (grid().status === 'loading') {
+    <p class="tty__dim" role="status">fetching from api.github.com<span class="tty__spinner" aria-hidden="true"></span></p>
+  } @else if (grid().status === 'error') {
+    <div role="alert">
+      <p class="tty__err">error: {{ grid().error }}</p>
+      <p><button class="tty__button" type="button" (click)="retry()">[retry]</button></p>
+    </div>
+  } @else {
+    <table class="tty__table tty__repos">
+      <caption class="visually-hidden">Public repositories on GitHub, most recently updated first</caption>
+      <thead>
+        <tr><th scope="col">name</th><th scope="col">language</th><th scope="col">stars</th><th scope="col">updated</th></tr>
+      </thead>
+      <tbody>
+        @for (project of grid().projects; track project.id) {
+          <tr>
+            <th scope="row"><a class="tty__link" [href]="project.githubUrl" rel="noopener">{{ project.title }}</a></th>
+            <td>{{ project.language }}</td>
+            <td>{{ project.stars }}</td>
+            <td>{{ project.lastUpdated | date: 'yyyy-MM-dd' }}</td>
+          </tr>
+          @if (project.description) {
+            <tr class="tty__desc"><td colspan="4">{{ project.description }}</td></tr>
+          }
+        }
+      </tbody>
+    </table>
+    <p class="tty__dim">{{ grid().projects.length }} {{ grid().projects.length === 1 ? 'repository' : 'repositories' }}. All of them: <a class="tty__link" [href]="'https://github.com/' + username" rel="noopener">github.com/{{ username }}</a></p>
+  }
+</div>

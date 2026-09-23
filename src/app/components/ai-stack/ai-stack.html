@@ -1,35 +1,30 @@
-<section id="stack" class="tty" aria-labelledby="stack-title">
-  <div class="tty__inner">
-    <h2 id="stack-title" class="visually-hidden">AI stack</h2>
-
-    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> ssh thelio ai status</p>
-    <p class="tty__out tty__dim">host thelio: {{ STACK.machine }}</p>
-    <table class="tty__table">
-      <caption class="visually-hidden">Model backends on the Thelio. Speeds are medians of repeated runs; context is the configured window.</caption>
-      <thead>
-        <tr><th scope="col">backend</th><th scope="col">shape</th><th scope="col">context</th><th scope="col">decode</th><th scope="col">state</th></tr>
-      </thead>
-      <tbody>
-        @for (model of STACK.models; track model.name; let i = $index) {
-          <tr [class.tty__on]="i === loaded" [attr.aria-current]="i === loaded ? 'true' : null">
-            <th scope="row">{{ model.name }}</th>
-            <td>{{ model.architecture }}</td>
-            <td>{{ model.context }}</td>
-            <td>{{ model.speed }}</td>
-            <td>{{ i === loaded ? 'loaded' : 'idle' }}</td>
-          </tr>
-          <tr class="tty__desc"><td colspan="5">{{ model.note }}</td></tr>
-        }
-      </tbody>
-    </table>
-
-    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> cat ~joshua/ai-stack/NOTES</p>
-    <div class="tty__out tty__prose">
-      @for (paragraph of STACK.intro; track $index) {
-        <p>{{ paragraph }}</p>
+<div class="tty__out">
+  <p class="tty__dim">host thelio: {{ STACK.machine }}</p>
+  <table class="tty__table">
+    <caption class="visually-hidden">Model backends on the Thelio. Speeds are medians of repeated runs; context is the configured window.</caption>
+    <thead>
+      <tr><th scope="col">backend</th><th scope="col">shape</th><th scope="col">context</th><th scope="col">decode</th><th scope="col">state</th></tr>
+    </thead>
+    <tbody>
+      @for (model of STACK.models; track model.name; let i = $index) {
+        <tr [class.tty__on]="i === loaded" [attr.aria-current]="i === loaded ? 'true' : null">
+          <th scope="row">{{ model.name }}</th>
+          <td>{{ model.architecture }}</td>
+          <td>{{ model.context }}</td>
+          <td>{{ model.speed }}</td>
+          <td>{{ i === loaded ? 'loaded' : 'idle' }}</td>
+        </tr>
+        <tr class="tty__desc"><td colspan="5">{{ model.note }}</td></tr>
       }
-      <p>{{ STACK.switching }}</p>
-      <p>{{ STACK.alwaysOn }}</p>
-    </div>
+    </tbody>
+  </table>
+
+  <p class="tty__sub tty__dim">ai-stack/NOTES</p>
+  <div class="tty__prose">
+    @for (paragraph of STACK.intro; track $index) {
+      <p>{{ paragraph }}</p>
+    }
+    <p>{{ STACK.switching }}</p>
+    <p>{{ STACK.alwaysOn }}</p>
   </div>
-</section>
+</div>

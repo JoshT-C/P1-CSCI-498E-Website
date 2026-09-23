@@ -1,5 +1,5 @@
 /**
- * Who the site belongs to. The hero, the terminal screens and the footer
+ * Who the site belongs to. The hero, the terminal screens and the shell
  * all read these, so the name, pronouns and status exist exactly once.
  */
 export const SITE_META = {

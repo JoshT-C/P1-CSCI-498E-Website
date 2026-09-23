@@ -7,7 +7,6 @@ import {
   CURATED_PROJECTS, GITHUB_USERNAME, HIDDEN_REPOS, MAX_GRID_PROJECTS
 } from '../../services/content/projects';
 import { SceneSyncService } from '../../services/scene-sync.service';
-import { SESSION_PROMPT } from '../../services/content/site';
 
 export interface GridState {
   status: 'loading' | 'error' | 'ready';
@@ -29,7 +28,6 @@ export class WorkComponent implements OnInit {
   private gridSubscription?: { unsubscribe(): void };
 
   readonly curated = CURATED_PROJECTS;
-  readonly prompt = SESSION_PROMPT;
   readonly limit = MAX_GRID_PROJECTS;
   readonly username = GITHUB_USERNAME;
   readonly grid = signal<GridState>({ status: 'loading', projects: [] });

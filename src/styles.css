@@ -73,9 +73,6 @@
 
   /* intro scroll run: doorway → desk → through the glass */
   --intro-run: 420vh;
-  /* spine fraction where the room hands over to the session; keep equal
-     to PORTAL_AT in src/scenes/camera-path.ts */
-  --portal-at: 0.94;
 
   color-scheme: dark;
 }
@@ -373,26 +370,30 @@ a:hover {
 
 :root[data-render='3d'] .intro {
   height: var(--intro-run);
-  /* The session overlaps the end of the dive, so it is already in place
-     when the room hands over at --portal-at: its first section's top then
-     sits 16px under the header. Without the overlap it only rose from the
-     bottom of the screen after the dive, and a slow scroll crossed a
-     stretch of black. The 16px also puts a jump to #work (which stops at
-     the header) just past the hand-over, so the session shows there too. */
-  margin-bottom: calc(
-    -1 * (100svh + (1 - var(--portal-at)) * (var(--intro-run) - 100svh) - var(--header-h) - 16px)
-  );
+  /* The shell overlaps the last screen of the walk, so the page ends where
+     the walk does (the camera through the glass) and never scrolls past. */
+  margin-bottom: calc(-1 * (100svh - var(--header-h)));
 }
 
-/* Until the hand-over the session is laid out but not shown: it lies
-   over the last part of the dive. */
-:root[data-render='3d'] .tty {
-  transition: opacity 450ms ease;
+/* The shell sits at the bottom of the screen for the whole walk (sticky
+   within the page), shown only once the room hands over at the glass: it
+   is in place the moment the canvas fades, with no stretch of black and
+   no sliding up. Until then it is hidden outright (invisible, out of the
+   tab order), not just transparent. */
+app-shell {
+  display: contents; /* so the shell sticks within the page, not its host */
 }
 
-:root[data-render='3d'][data-portal='out'] .tty {
+:root[data-render='3d'] .shell {
+  position: sticky;
+  bottom: 0;
+  transition: opacity 450ms ease, visibility 0s;
+}
+
+:root[data-render='3d'][data-portal='out'] .shell {
   opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 450ms ease, visibility 0s linear 450ms;
 }
 
 /* the desk tier starts closer, so the walk is shorter */
@@ -931,48 +932,6 @@ html.js .term__screen.is-typing {
 }
 
 /* ---- About ---- */
-
-/* ---- Contact ---- */
-/* The last section fills the viewport, so the final prompt and cursor sit
-   at the end of the session with the footer below. */
-#contact {
-  min-height: calc(100svh - var(--header-h) - 6rem);
-}
-
-/* ---- Footer ---- */
-.site-footer {
-  border-top: 1px solid var(--hairline);
-  background: var(--panel);
-  padding: var(--sp-4) var(--sp-3);
-  position: relative;
-  z-index: 1;
-}
-
-.site-footer-inner {
-  max-width: var(--container-max);
-  margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-}
-
-.site-footer a {
-  color: var(--ink-soft);
-  min-height: var(--btn-min);
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.site-footer a:hover {
-  color: var(--accent);
-  text-decoration: underline;
-}
 
 /* ---- Reduced motion: remaining continuous motion, consolidated ---- */
 @media (prefers-reduced-motion: reduce) {
@@ -1549,9 +1508,106 @@ html.js .term__screen.is-typing {
   50% { opacity: 0; }
 }
 
-.tty__last {
-  margin-top: var(--sp-5);
-  padding-bottom: var(--sp-6);
+/* ---- The shell ---- */
+/* One screen: the log scrolls inside it, the prompt stays at the bottom.
+   It is the page's last block, so the page cannot scroll past it; a wheel
+   at the top of the log carries on up the page, back out of the glass. */
+.shell {
+  height: calc(100svh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.shell__log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-3) var(--sp-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--phosphor-faint) transparent;
+}
+
+.shell__entry {
+  margin-top: var(--sp-4);
+}
+
+.shell__entry > .tty__cmd {
+  margin-top: 0;
+}
+
+.tty__sub {
+  margin-top: var(--sp-3);
+}
+
+.shell__prompt {
+  padding: var(--sp-1) var(--sp-3) var(--sp-4);
+}
+
+.shell__line {
+  display: flex;
+  align-items: baseline;
+  gap: 1ch;
+}
+
+.shell__line .tty__ps1 {
+  flex: none;
+}
+
+.shell__line:focus-within .tty__ps1 {
+  color: var(--phosphor);
+}
+
+.shell__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--phosphor-bright);
+  text-shadow: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  caret-color: var(--phosphor);
+}
+
+/* `help`: command names are buttons that put the name on the prompt */
+.shell__help div {
+  display: grid;
+  grid-template-columns: 12ch minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: baseline;
+}
+
+.shell__cmd {
+  min-height: 30px;
+}
+
+.shell__cmd::before {
+  content: '[';
+  color: var(--phosphor-dim);
+}
+
+.shell__cmd::after {
+  content: ']';
+  color: var(--phosphor-dim);
+}
+
+@media (max-width: 720px) {
+  .shell__log {
+    padding: var(--sp-3) var(--sp-2) var(--sp-1);
+  }
+
+  .shell__prompt {
+    padding: var(--sp-1) var(--sp-2) var(--sp-3);
+  }
+
+  .shell__help div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-bottom: var(--sp-1);
+  }
 }
 
 @media (max-width: 720px) {

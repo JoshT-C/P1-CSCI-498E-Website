@@ -81,12 +81,14 @@ export class SceneSyncService {
   }
 
   /** Open a station panel. The terminal is not a panel: it means "go in",
-   *  so it scrolls to the first section instead. */
+   *  so it scrolls to the session instead. */
   openStation(station: StationId, item: string | null = null): void {
     if (station === 'terminal') {
       this.closeStation();
       const reduced = this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
-      this.document.getElementById('work')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+      // the session ends the page; in 3D the page's end is through the glass
+      const w = this.document.defaultView;
+      w?.scrollTo({ top: this.document.documentElement.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
       return;
     }
     const floppy = station === 'floppies' ? (item ?? this.floppy() ?? FLOPPIES[0]?.id ?? null) : null;

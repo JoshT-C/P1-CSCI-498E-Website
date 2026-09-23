@@ -1,0 +1,69 @@
+<section id="shell" class="tty shell" aria-label="Terminal session">
+  <div class="shell__log" #log role="log" aria-live="polite">
+    <div class="tty__inner">
+      <p class="tty__dim">{{ meta.name }} · guest session · © {{ meta.year }} · Angular + three.js, self-hosted</p>
+      <p class="tty__dim">Type a command, or click one to put it on the prompt.</p>
+
+      @for (entry of entries(); track entry.id) {
+        <div class="shell__entry" [attr.data-entry]="entry.id" [attr.id]="isServer ? anchorFor(entry.command) : null">
+          <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> {{ entry.input }}</p>
+          @switch (entry.command) {
+            @case ('help') {
+              <dl class="tty__out shell__help">
+                @for (c of commands; track c.name) {
+                  <div>
+                    <dt><button type="button" class="tty__button shell__cmd" (click)="fill(c.name)">{{ c.name }}</button></dt>
+                    <dd>{{ c.summary }}</dd>
+                  </div>
+                }
+              </dl>
+              <p class="tty__out tty__dim">Tab finishes a command; the up and down arrows recall earlier ones.</p>
+            }
+            @case ('projects') { <app-work /> }
+            @case ('ai-stack') { <app-ai-stack /> }
+            @case ('about') { <app-about /> }
+            @case ('contact') { <app-contact /> }
+            @case ('whoami') {
+              <dl class="tty__out tty__kv">
+                <div><dt>name</dt><dd>{{ meta.name }}</dd></div>
+                <div><dt>pronouns</dt><dd>{{ meta.pronouns }}</dd></div>
+                <div><dt>status</dt><dd>{{ meta.status }}</dd></div>
+              </dl>
+            }
+            @case ('exit') {
+              <p class="tty__out tty__dim">logout</p>
+            }
+            @case ('unknown') {
+              <p class="tty__out">
+                <span class="tty__err">{{ entry.input }}: command not found.</span>
+                Try <button type="button" class="tty__button shell__cmd" (click)="fill('help')">help</button>.
+              </p>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <form class="shell__prompt" (submit)="submit($event)">
+    <div class="tty__inner shell__line">
+      <label class="tty__ps1" for="shell-input">{{ prompt }}</label>
+      <input
+        #field
+        id="shell-input"
+        class="shell__input"
+        type="text"
+        name="command"
+        [value]="input()"
+        (input)="input.set(field.value)"
+        (keydown)="onKey($event)"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        enterkeyhint="go"
+        aria-describedby="shell-hint"
+      />
+      <span id="shell-hint" class="visually-hidden">Type a command and press Enter. Type help for the list.</span>
+    </div>
+  </form>
+</section>

@@ -1,7 +1,8 @@
 /**
- * The page's sections, in order, and the DOM id each one renders under.
- * The screen mirrors whichever section is in view; home.ts observes these
- * ids; the scene reads the section keys. One list, so the three agree.
+ * The site's sections, in order, and the DOM id each one renders under in
+ * the server-rendered page. The shell's commands map onto them (the header
+ * marks the current one, the VT100's screen mirrors it); the scene reads
+ * the section keys. One list, so they agree.
  */
 export const SITE_SECTIONS = ['hero', 'work', 'stack', 'about', 'contact'] as const;
 export type SiteSection = (typeof SITE_SECTIONS)[number];
