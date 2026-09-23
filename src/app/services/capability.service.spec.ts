@@ -1,5 +1,6 @@
 import {
   decideTier,
+  downgradeApplies,
   isTier,
   stepDown,
   type CapabilityDecision,
@@ -147,6 +148,22 @@ describe('stepDown', () => {
     expect(stepDown('room')).toBe('desk');
     expect(stepDown('desk')).toBe('css');
     expect(stepDown('css')).toBe('css');
+  });
+});
+
+describe('downgradeApplies', () => {
+  it('holds a forced tier against a slow frame rate', () => {
+    expect(downgradeApplies('forced', 'runtime-fps')).toBe(false);
+  });
+
+  it('still steps a forced tier down on a failure', () => {
+    for (const cause of ['context-lost', 'scene-load-fail', 'webgl-fail']) {
+      expect(downgradeApplies('forced', cause)).toBe(true);
+    }
+  });
+
+  it('steps a detected tier down for any cause', () => {
+    expect(downgradeApplies('ok', 'runtime-fps')).toBe(true);
   });
 });
 

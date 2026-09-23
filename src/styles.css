@@ -143,8 +143,10 @@ a:hover {
 }
 
 /* ---- Accessibility ---- */
+/* fixed, not absolute: reaching it by Shift+Tab from the shell must not
+   scroll the page to its top (and back out of the glass) */
 .skip-link {
-  position: absolute;
+  position: fixed;
   top: -100px;
   left: var(--sp-2);
   z-index: 100;

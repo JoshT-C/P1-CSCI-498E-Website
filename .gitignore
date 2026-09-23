@@ -52,3 +52,9 @@ Thumbs.db
 # raw Blender bake output (packed GLBs live in public/assets/room)
 art/out/
 __pycache__/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

@@ -48,7 +48,7 @@ export class WorkComponent implements OnInit {
     this.gridSubscription?.unsubscribe();
     this.grid.set({ status: 'loading', projects: [] });
     this.gridSubscription = this.github
-      .getPublicRepositories(GITHUB_USERNAME, { fallbackOnError: false })
+      .getPublicRepositories(GITHUB_USERNAME)
       .pipe(
         map(projects =>
           projects

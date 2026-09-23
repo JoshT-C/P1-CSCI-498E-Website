@@ -34,11 +34,10 @@
 import { chromium, firefox } from 'playwright';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { existsSync, mkdirSync, createReadStream, statSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { mkdirSync } from 'node:fs';
+import { serveDist } from './serve-dist.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = join(ROOT, 'dist', 'jtc-site', 'browser');
 const VERIFICATION = join(ROOT, 'verification');
 const EMAIL = 'joshua_t-c@outlook.com';
 const SECTION_IDS = ['work', 'stack', 'about', 'contact'];
@@ -63,11 +62,13 @@ function note(text) {
   console.log(`  [note] ${text}`);
 }
 
+/** Messages the browser itself writes to the page console, not the site. */
+const BROWSER_NOISE = [/classified as a bounce tracker/i];
+
 function freshBag() {
   return {
     consoleErrors: [],
-    consoleWarnings: [],
-    sceneLog: [],
+    consoleOther: [],
     pageErrors: [],
     requestFailed: [],
     http400: [],
@@ -83,11 +84,12 @@ async function attach(page, bag) {
       window.__csp.push(`${e.effectiveDirective || e.violatedDirective || '?'}: ${e.blockedURI || ''}`);
     });
   });
+  // the console must stay silent: errors, warnings, logs and info all count
   page.on('console', msg => {
     const text = msg.text();
+    if (BROWSER_NOISE.some(re => re.test(text))) return;
     if (msg.type() === 'error') bag.consoleErrors.push(text);
-    else if (msg.type() === 'warning') bag.consoleWarnings.push(text);
-    else if (text.includes('[scene]')) bag.sceneLog.push(text);
+    else if (msg.type() !== 'debug') bag.consoleOther.push(`${msg.type()}: ${text}`);
   });
   page.on('pageerror', err => bag.pageErrors.push(String(err)));
   page.on('requestfailed', req => {
@@ -110,10 +112,10 @@ async function finishPass(page, bag, pass) {
   let ok = true;
   ok = record(`${pass}: no uncaught exceptions`, bag.pageErrors.length === 0, bag.pageErrors.slice(0, 3).join(' | ')) && ok;
   ok = record(`${pass}: no console errors`, bag.consoleErrors.length === 0, bag.consoleErrors.slice(0, 3).join(' | ')) && ok;
+  ok = record(`${pass}: nothing else in the console`, bag.consoleOther.length === 0, bag.consoleOther.slice(0, 3).join(' | ')) && ok;
   ok = record(`${pass}: no failed requests`, bag.requestFailed.length === 0, bag.requestFailed.slice(0, 3).join(' | ')) && ok;
   ok = record(`${pass}: no HTTP >= 400`, bag.http400.length === 0, bag.http400.slice(0, 3).join(' | ')) && ok;
   ok = record(`${pass}: no CSP violations`, bag.csp.length === 0, bag.csp.slice(0, 3).join(' | ')) && ok;
-  for (const w of bag.consoleWarnings.slice(0, 3)) console.log(`  [warn] ${pass}: ${w.slice(0, 300)}`);
   for (const n of bag.envNotes) note(n);
   return ok;
 }
@@ -132,68 +134,17 @@ async function launchBrowser() {
   return firefox.launch({ headless: true, firefoxUserPrefs: { 'webgl.force-enabled': true } });
 }
 
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.mjs': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.woff2': 'font/woff2',
-  '.glb': 'model/gltf-binary',
-  '.webp': 'image/webp',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.txt': 'text/plain; charset=utf-8'
-};
-
-/** Serves the prerendered dist on a free port so `npm run audit` is
- *  self-contained when nothing is on :4200. */
-async function serveDistIfNeeded() {
+/** A URL given, or :4200 if something serves there, or the dist served
+ *  here (scripts/serve-dist.mjs). */
+async function target() {
   if (process.argv[2]) return { url: process.argv[2].replace(/\/$/, ''), server: null };
   const devUrl = 'http://localhost:4200';
   try {
     await fetch(devUrl, { signal: AbortSignal.timeout(1500) });
     return { url: devUrl, server: null };
   } catch {
-    // nothing serving — fall through to dist
+    return serveDist({ port: 0 });
   }
-  if (!existsSync(DIST)) throw new Error(`no URL given and ${DIST} missing — run \`npm run build\` first`);
-  const server = createServer((req, res) => {
-    const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
-    const file = join(DIST, path);
-    if (!(file === DIST || file.startsWith(DIST + '/'))) {
-      res.writeHead(403);
-      res.end();
-      return;
-    }
-    const isAsset = path.includes('.') && !path.endsWith('.');
-    const hit = [file, join(file, 'index.html')].find(p => {
-      try {
-        return statSync(p).isFile();
-      } catch {
-        return false;
-      }
-    });
-    if (hit) {
-      res.writeHead(200, { 'Content-Type': MIME[hit.slice(hit.lastIndexOf('.'))] ?? 'application/octet-stream' });
-      createReadStream(hit).pipe(res);
-      return;
-    }
-    if (isAsset) {
-      res.writeHead(404);
-      res.end('not found');
-      return;
-    }
-    // extensionless route: single-page app, fall back to the prerendered index
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    createReadStream(join(DIST, 'index.html')).pipe(res);
-  });
-  const url = await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${server.address().port}`));
-  });
-  return { url, server };
 }
 
 /** The shell's state, as the checks read it. */
@@ -224,7 +175,7 @@ async function runCommand(page, line) {
   await page.waitForTimeout(500);
 }
 
-const { url: AUDIT_URL, server: staticServer } = await serveDistIfNeeded();
+const { url: AUDIT_URL, server: staticServer } = await target();
 const withQuery = q => `${AUDIT_URL}/${AUDIT_URL.includes('?') ? '&' : '?'}${q}`;
 mkdirSync(VERIFICATION, { recursive: true });
 console.log(`audit-browser: ${AUDIT_URL} (${process.env.AUDIT_BROWSER === 'chromium' ? 'chromium' : 'firefox'})`);
@@ -275,9 +226,10 @@ try {
         await page.waitForSelector('.scene-host canvas', { timeout: 20000 }).then(() => true, () => false)));
       await page.waitForFunction(() => document.documentElement.dataset.portal !== undefined, null, { timeout: 20000 }).catch(() => {});
     } else {
-      const clean = bag.sceneLog.some(line => [...CLEAN_DOWNGRADES].some(r => line.includes(`(${r})`)));
-      fail(record('pass 1: render mode is 3d (or a clean logged downgrade)', clean,
-        clean ? `flat — clean downgrade logged: ${bag.sceneLog.join('; ')}` : `UNEXPLAINED flat page — ${bag.sceneLog.join('; ')}`));
+      const reason = await page.evaluate(() => document.documentElement.dataset.tierReason ?? '');
+      const clean = CLEAN_DOWNGRADES.has(reason);
+      fail(record('pass 1: render mode is 3d (or a clean, recorded downgrade)', clean,
+        clean ? `flat — downgraded for ${reason}` : `UNEXPLAINED flat page (reason '${reason}')`));
     }
     await page.waitForTimeout(2500);
 
@@ -451,7 +403,7 @@ try {
       ['page errors', lastBag.pageErrors],
       ['failed requests', lastBag.requestFailed],
       ['http >= 400', lastBag.http400],
-      ['scene log', lastBag.sceneLog]
+      ['other console', lastBag.consoleOther]
     ]) {
       for (const line of lines.slice(0, 5)) console.error(`    ${label}: ${line.slice(0, 300)}`);
     }

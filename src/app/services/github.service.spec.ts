@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { GitHubService, GitHubRepo, GitHubUser } from './github.service';
+import { GitHubService, GitHubRepo } from './github.service';
 
 const API = 'https://api.github.com';
 
@@ -98,18 +98,9 @@ describe('GitHubService', () => {
         ]);
     });
 
-    it('returns an empty list by default on API errors', () => {
-      service.getPublicRepositories('JoshT-C').subscribe(projects => {
-        expect(projects).toEqual([]);
-      });
-
-      httpMock.expectOne(`${API}/users/JoshT-C/repos?sort=updated&per_page=100`)
-        .flush('rate limited', { status: 403, statusText: 'Forbidden' });
-    });
-
-    it('rethrows when the caller opts out of the empty-list fallback', () => {
+    it('surfaces an API error rather than an empty list', () => {
       let failed = false;
-      service.getPublicRepositories('JoshT-C', { fallbackOnError: false }).subscribe({
+      service.getPublicRepositories('JoshT-C').subscribe({
         next: () => {
           throw new Error('expected the request to fail');
         },
@@ -152,9 +143,7 @@ describe('GitHubService', () => {
     });
 
     it('does not cache failures, so a retry re-requests', () => {
-      service.getPublicRepositories('JoshT-C').subscribe(projects => {
-        expect(projects).toEqual([]);
-      });
+      service.getPublicRepositories('JoshT-C').subscribe({ error: () => undefined });
       httpMock.expectOne(REPOS_URL)
         .flush('rate limited', { status: 403, statusText: 'Forbidden' });
 
@@ -164,65 +153,6 @@ describe('GitHubService', () => {
         expect(projects[0].title).toBe('recovered');
       });
       httpMock.expectOne(REPOS_URL).flush([makeRepo({ name: 'recovered' })]);
-    });
-
-    it('shares the profile endpoint across subscribers', () => {
-      const profile: Partial<GitHubUser> = {
-        login: 'JoshT-C', name: 'Joshua', bio: '', blog: '', location: '',
-        avatar_url: 'https://avatars.example/1', public_repos: 1,
-        followers: 0, following: 0, created_at: '2022-06-01T00:00:00Z'
-      };
-
-      service.getUserProfile('JoshT-C').subscribe();
-      httpMock.expectOne(`${API}/users/JoshT-C`).flush(profile);
-      service.getUserProfile('JoshT-C').subscribe();
-      httpMock.expectNone(`${API}/users/JoshT-C`);
-    });
-  });
-
-  describe('getUserProfile', () => {
-    const user: GitHubUser = {
-      login: 'JoshT-C',
-      id: 99,
-      avatar_url: 'https://avatars.example/99',
-      name: 'Joshua Tuominen-Collins',
-      bio: 'CS student',
-      blog: '',
-      location: 'Colorado',
-      email: null,
-      public_repos: 5,
-      followers: 10,
-      following: 2,
-      created_at: '2022-06-01T00:00:00Z',
-      updated_at: '2025-06-01T00:00:00Z'
-    };
-
-    it('maps the GitHub user to a profile', () => {
-      service.getUserProfile('JoshT-C').subscribe(profile => {
-        expect(profile).not.toBeNull();
-        expect(profile!.username).toBe('JoshT-C');
-        expect(profile!.name).toBe('Joshua Tuominen-Collins');
-        expect(profile!.joinDate).toEqual(new Date('2022-06-01T00:00:00Z'));
-      });
-
-      httpMock.expectOne(`${API}/users/JoshT-C`).flush(user);
-    });
-
-    it('falls back to the login when the user has no display name', () => {
-      service.getUserProfile('JoshT-C').subscribe(profile => {
-        expect(profile!.name).toBe('JoshT-C');
-      });
-
-      httpMock.expectOne(`${API}/users/JoshT-C`).flush({ ...user, name: null });
-    });
-
-    it('returns null on API errors', () => {
-      service.getUserProfile('JoshT-C').subscribe(profile => {
-        expect(profile).toBeNull();
-      });
-
-      httpMock.expectOne(`${API}/users/JoshT-C`)
-        .flush('not found', { status: 404, statusText: 'Not Found' });
     });
   });
 });

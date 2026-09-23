@@ -63,6 +63,15 @@ export function stepDown(tier: Tier): Tier {
   return tier === 'room' ? 'desk' : 'css';
 }
 
+/** Whether a runtime downgrade applies. A tier forced with `?tier=` holds
+ *  against a slow frame rate (the override exists to look at that tier on
+ *  any machine, and the test suite runs it on GPU-less CI), but not
+ *  against a failure: a lost context or a model that will not load
+ *  cannot render at any tier's frame rate. */
+export function downgradeApplies(decidedBy: string, cause: string): boolean {
+  return !(decidedBy === 'forced' && cause === 'runtime-fps');
+}
+
 interface NavigatorWithHints extends Navigator {
   deviceMemory?: number;
 }
@@ -78,6 +87,9 @@ export class CapabilityService {
   readonly tier = signal<Tier>('css');
   readonly reason = signal('server');
   readonly render = computed<RenderStyle>(() => (this.tier() === 'css' ? 'css' : '3d'));
+  /** `?debug`: tier decisions go to the console too. Otherwise the console
+   *  stays silent; the decision is on <html data-tier data-tier-reason>. */
+  private debug = false;
 
   constructor() {
     if (this.isBrowser) {
@@ -91,6 +103,7 @@ export class CapabilityService {
     if (!w) return;
 
     const params = new URLSearchParams(w.location.search);
+    this.debug = params.has('debug');
     const forced = params.get('tier');
     const probe: CapabilityProbe = {
       forced: isTier(forced) ? forced : null,
@@ -109,6 +122,10 @@ export class CapabilityService {
    *  or failed to load. Step down one tier for the rest of the visit. */
   downgrade(reason: string): void {
     if (this.tier() === 'css') return;
+    if (!downgradeApplies(this.reason(), reason)) {
+      if (this.debug) console.info('[scene] tier:', this.tier(), `(kept: forced, ignoring ${reason})`);
+      return;
+    }
     this.apply({ tier: stepDown(this.tier()), reason });
   }
 
@@ -118,7 +135,8 @@ export class CapabilityService {
     const root = this.document.documentElement;
     root.dataset['render'] = decision.tier === 'css' ? 'css' : '3d';
     root.dataset['tier'] = decision.tier;
-    console.info('[scene] tier:', decision.tier, `(${decision.reason})`);
+    root.dataset['tierReason'] = decision.reason;
+    if (this.debug) console.info('[scene] tier:', decision.tier, `(${decision.reason})`);
   }
 
   private hasWebgl(): boolean {

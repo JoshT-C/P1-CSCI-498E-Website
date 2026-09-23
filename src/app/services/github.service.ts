@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { type Observable, TimeoutError, map, catchError, of, shareReplay, throwError, timeout } from 'rxjs';
+import { type Observable, TimeoutError, map, catchError, shareReplay, throwError, timeout } from 'rxjs';
 import { REQUEST_TIMEOUT_MS } from '../config/site.config';
 
 export interface GitHubRepo {
@@ -20,35 +20,6 @@ export interface GitHubRepo {
   archived: boolean;
   fork: boolean;
   private: boolean;
-}
-
-export interface GitHubUser {
-  login: string;
-  id: number;
-  avatar_url: string;
-  name: string | null;
-  bio: string | null;
-  blog: string | null;
-  location: string | null;
-  email: string | null;
-  public_repos: number;
-  followers: number;
-  following: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserProfile {
-  username: string;
-  name: string;
-  bio: string;
-  avatarUrl: string;
-  location: string;
-  blog: string;
-  publicRepos: number;
-  followers: number;
-  following: number;
-  joinDate: Date;
 }
 
 export interface ProjectData {
@@ -117,7 +88,7 @@ export class GitHubService {
    *
    * A failed request evicts its own key, so failures are never cached and
    * `retry()` in the Work section can genuinely re-request. That is why
-   * callers layer their catchError *outside* this helper rather than inside
+   * callers layer their error handling *outside* this helper rather than inside
    * the factory.
    */
   private cached<T>(key: string, factory: () => Observable<T>): Observable<T> {
@@ -142,49 +113,14 @@ export class GitHubService {
     return shared;
   }
 
-  getUserProfile(username: string): Observable<UserProfile | null> {
-    return this.cached(`profile:${username}`, () =>
-      this.http.get<GitHubUser>(`${this.GITHUB_API}/users/${username}`)
-        .pipe(map(user => this.transformUser(user)))
-    ).pipe(
-      catchError(error => {
-        console.error('Error fetching GitHub user profile:', error);
-        return of(null);
-      })
-    );
-  }
-
-  getPublicRepositories(
-    username: string,
-    options: { fallbackOnError?: boolean } = {}
-  ): Observable<ProjectData[]> {
+  /** Public, non-fork repos, most recently updated first. A failure is an
+   *  error for the caller to show (with its retry), never an empty list:
+   *  "no projects" would be a lie. */
+  getPublicRepositories(username: string): Observable<ProjectData[]> {
     return this.cached(`repos:${username}`, () =>
       this.http.get<GitHubRepo[]>(`${this.GITHUB_API}/users/${username}/repos?sort=updated&per_page=100`)
         .pipe(map(repos => this.transformRepos(repos)))
-    ).pipe(
-      catchError(error => {
-        // The grid has a retry state; a failed fetch must surface as an
-        // error with retry, never as an empty "no projects" state.
-        if (options.fallbackOnError === false) return throwError(() => error);
-        console.error('Error fetching GitHub repositories:', error);
-        return of([]);
-      })
     );
-  }
-
-  private transformUser(user: GitHubUser): UserProfile {
-    return {
-      username: user.login,
-      name: user.name || user.login,
-      bio: user.bio || '',
-      avatarUrl: user.avatar_url,
-      location: user.location || '',
-      blog: user.blog || '',
-      publicRepos: user.public_repos,
-      followers: user.followers,
-      following: user.following,
-      joinDate: new Date(user.created_at)
-    };
   }
 
   private transformRepos(repos: GitHubRepo[]): ProjectData[] {

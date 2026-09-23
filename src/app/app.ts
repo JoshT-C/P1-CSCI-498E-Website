@@ -27,9 +27,10 @@ export class AppComponent {
     }
 
     // A client-side route change moves focus to the page — the same courtesy
-    // a link click already gives the keyboard user.
+    // a link click already gives the keyboard user. Not the first load
+    // (navigation 1): focus must start at the top, where the skip link is.
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd && event.url !== '/'),
+      filter(event => event instanceof NavigationEnd && event.id > 1),
       takeUntilDestroyed()
     ).subscribe(() => {
       if (!this.isBrowser) return;
