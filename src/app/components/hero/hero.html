@@ -1,57 +1,69 @@
-<section id="top" class="section hero" aria-label="Introduction">
-  <div class="section-inner hero-inner">
-    <div class="hero-copy">
-      <p class="mono" appReveal>$ cat /etc/whoami</p>
-      <h1 class="hero-name" appReveal>
-        Joshua <span class="accent">T-C</span>
-      </h1>
-      <p class="lede hero-lede" appReveal>
-        CS student. I build the machines I depend on — a homelab, the server
-        infrastructure for a 600-member community, and a local AI stack
-        running four large models on one GPU.
-      </p>
-      <div class="hero-meta" appReveal>
-        <p class="mono"><strong>pronouns:</strong> any / all</p>
-        <p class="mono"><strong>status:</strong> metaphysical exile</p>
-        <p class="mono"><strong>stack:</strong> angular · three.js · llama.cpp</p>
-      </div>
-      <div class="hero-cta" appReveal>
-        <a class="prompt-link" href="#work"
-          ><span class="prompt">joshua@t-c:~$</span>./explore ↓</a
-        >
-        <a class="prompt-link" href="#stack"
-          ><span class="prompt">joshua@t-c:~$</span>./ai-stack</a
-        >
-      </div>
-    </div>
-
-    <!-- The terminal card: prerendered in full for no-JS, retyped by JS from
-         the same TERMINAL.hero source. Decorative duplicate of the meta above. -->
-    <div class="hero-visual" appReveal>
-      <div class="term" aria-hidden="true">
-        <div class="term__chrome">
-          <span class="term__dots">
-            <span class="term__dot term__dot--on"></span>
-            <span class="term__dot"></span>
-            <span class="term__dot"></span>
-          </span>
-          <span class="term__title">joshua@t-c:~</span>
+<section id="top" class="intro" aria-label="Introduction">
+  <div class="intro__stage">
+    <div class="section-inner intro__inner">
+      <div class="intro__panel">
+        <div class="intro__plate">
+          <p class="mono intro__cmd" aria-hidden="true">$ cat /etc/whoami</p>
+          <h1 class="hero-name">
+            {{ meta.nameParts[0] }} <span class="accent">{{ meta.nameParts[1] }}</span>
+          </h1>
+          <p class="lede hero-lede">{{ meta.lede }}</p>
+          <dl class="hero-meta">
+            <div><dt>pronouns</dt><dd>{{ meta.pronouns }}</dd></div>
+            <div><dt>status</dt><dd>{{ meta.status }}</dd></div>
+            <div><dt>stack</dt><dd>{{ meta.stack.join(' · ') }}</dd></div>
+          </dl>
         </div>
-        <div class="term__screen">
-          @for (line of terminalLines; track $index; let last = $last) {
-          <div class="term__line">
-            @if (line.prompt) {
-            <span class="term__prompt">{{ line.prompt }}</span>
+
+        <nav class="stations" aria-label="The room">
+          <p class="stations__head mono" aria-hidden="true">$ ls ~/room</p>
+          <ul class="stations__list">
+            @for (s of stations; track s.id) {
+              <li>
+                <button type="button" class="station-link" (click)="open(s.id)" [attr.aria-pressed]="station() === s.id">
+                  <span class="station-link__key" aria-hidden="true">{{ s.key }}</span>
+                  <span class="station-link__name">{{ s.name }}</span>
+                  <span class="station-link__what">{{ s.what }}</span>
+                </button>
+              </li>
             }
-            <span class="term__text">{{ line.prompt ? ' ' + line.text : line.text }}</span
-            >
-            @if (last) {
-            <span class="term__caret"></span>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- CSS tier only: the typed card stands in for the room. Prerendered in
+           full for no-JS, retyped by JS from the same TERMINAL.hero source. -->
+      <div class="hero-visual">
+        <div class="term" aria-hidden="true">
+          <div class="term__chrome">
+            <span class="term__dots">
+              <span class="term__dot term__dot--on"></span>
+              <span class="term__dot"></span>
+              <span class="term__dot"></span>
+            </span>
+            <span class="term__title">joshua&#64;t-c:~</span>
+          </div>
+          <div class="term__screen">
+            @for (line of terminalLines; track $index; let last = $last) {
+              <div class="term__line">
+                @if (line.prompt) {
+                  <span class="term__prompt">{{ line.prompt }}</span>
+                }
+                <span class="term__text">{{ line.prompt ? ' ' + line.text : line.text }}</span>
+                @if (last) {
+                  <span class="term__caret"></span>
+                }
+              </div>
             }
           </div>
-          }
         </div>
       </div>
+
+      <a class="intro__cue mono" href="#work">
+        <span class="intro__cue-3d">scroll to sit down</span>
+        <span class="intro__cue-css">./explore</span>
+        <span aria-hidden="true">↓</span>
+      </a>
     </div>
   </div>
 </section>

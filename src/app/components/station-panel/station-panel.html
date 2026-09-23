@@ -1,0 +1,109 @@
+<dialog #dialog class="station-panel" [attr.aria-labelledby]="'station-title'" (close)="onClose()" (pointerdown)="onDialogClick($event)">
+  <div class="station-panel__inner">
+    <header class="station-panel__head">
+      <p class="mono station-panel__cmd" aria-hidden="true"><span class="prompt">joshua&#64;t-c:~$</span> {{ command() }}</p>
+      <h2 id="station-title" class="station-panel__title">{{ title() }}</h2>
+      <button type="button" class="station-panel__close" (click)="close()" aria-label="Close and step back">
+        <span aria-hidden="true">esc</span>
+      </button>
+    </header>
+
+    @switch (station()) {
+      @case ('rack') {
+        <section class="panel-block" aria-labelledby="rack-machines">
+          <h3 id="rack-machines" class="kicker">machines</h3>
+          <ul class="node-list">
+            @for (n of rackNodes; track n.node.id) {
+              <li class="node">
+                <p class="node__tape mono">{{ n.node.tape }}</p>
+                <dl class="spec-list">
+                  @for (s of n.specs; track s.label) {
+                    <div><dt>{{ s.label }}</dt><dd>{{ s.value }}</dd></div>
+                  }
+                </dl>
+                @if (n.node.role) {
+                  <p class="node__role">{{ n.node.role }}</p>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="panel-block" aria-labelledby="rack-models">
+          <h3 id="rack-models" class="kicker">models</h3>
+          <p class="panel-prose">{{ switching }}</p>
+          <table class="model-table">
+            <caption class="visually-hidden">Model backends on the Thelio, median of repeated runs</caption>
+            <thead>
+              <tr><th scope="col">backend</th><th scope="col">shape</th><th scope="col">context</th><th scope="col">decode</th><th scope="col">state</th></tr>
+            </thead>
+            <tbody>
+              @for (m of models; track m.name) {
+                <tr [attr.aria-current]="$index === activeBackend ? 'true' : null"><th scope="row">{{ m.name }}</th><td>{{ m.architecture }}</td><td>{{ m.context }}</td><td>{{ m.speed }}</td><td>{{ $index === activeBackend ? 'loaded' : 'idle' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </section>
+
+        <section class="panel-block" aria-labelledby="rack-services">
+          <h3 id="rack-services" class="kicker">services</h3>
+          <dl class="spec-list spec-list--wide">
+            @for (s of services; track s.name) {
+              <div><dt>{{ s.name }}</dt><dd>{{ s.does }}</dd></div>
+            }
+          </dl>
+          <app-diagram [diagram]="diagrams[0]" />
+        </section>
+      }
+
+      @case ('floppies') {
+        <div class="floppy-picker" role="group" aria-label="Choose a disk">
+          @for (f of floppies; track f.id) {
+            <button type="button" class="floppy-chip mono" [attr.aria-pressed]="f.id === floppyId()" (click)="pick(f.id)">
+              {{ f.label }}
+            </button>
+          }
+        </div>
+        @if (floppy(); as f) {
+          <article class="panel-block floppy-detail" aria-live="polite">
+            <h3 class="floppy-detail__title">{{ f.title }}</h3>
+            <p class="panel-prose">{{ f.body }}</p>
+            <ul class="tag-row">
+              @for (t of f.tags; track t) {
+                <li class="tag">{{ t }}</li>
+              }
+            </ul>
+            @if (f.href && f.hrefLabel) {
+              <a class="prompt-link" [href]="f.href" (click)="f.href.startsWith('#') ? close() : null"><span class="prompt">$</span> {{ f.hrefLabel }}</a>
+            }
+          </article>
+        }
+      }
+
+      @case ('whiteboard') {
+        @for (d of diagrams; track d.title) {
+          <section class="panel-block">
+            <app-diagram [diagram]="d" />
+          </section>
+        }
+      }
+
+      @case ('laptop') {
+        <section class="panel-block" aria-labelledby="laptop-machine">
+          <h3 id="laptop-machine" class="kicker">{{ laptop.node.tape }}</h3>
+          <dl class="spec-list">
+            @for (s of laptop.specs; track s.label) {
+              <div><dt>{{ s.label }}</dt><dd>{{ s.value }}</dd></div>
+            }
+          </dl>
+          @if (laptop.node.role) {
+            <p class="panel-prose">{{ laptop.node.role }}</p>
+          }
+          @if (laptopStory) {
+            <p class="panel-prose">{{ laptopStory.body }}</p>
+          }
+        </section>
+      }
+    }
+  </div>
+</dialog>

@@ -6,15 +6,8 @@ import { AiStackComponent } from '../components/ai-stack/ai-stack';
 import { AboutComponent } from '../components/about/about';
 import { ContactComponent } from '../components/contact/contact';
 import { SceneSyncService } from '../services/scene-sync.service';
-
-/** DOM id → the section key the screen mirrors. */
-const SECTION_BY_ID: Record<string, string> = {
-  top: 'hero',
-  work: 'work',
-  stack: 'stack',
-  about: 'about',
-  contact: 'contact'
-};
+import { SECTION_DOM_ID, SITE_SECTIONS } from '../config/site.config';
+import { SECTION_BAND } from '../config/observer.options';
 
 @Component({
   selector: 'app-home',
@@ -35,20 +28,20 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
    */
   ngAfterViewInit(): void {
     if (!this.isBrowser || !('IntersectionObserver' in window)) return;
-    const targets = Object.keys(SECTION_BY_ID)
-      .map(id => document.getElementById(id))
+    const targets = SITE_SECTIONS
+      .map(section => document.getElementById(SECTION_DOM_ID[section]))
       .filter((el): el is HTMLElement => el !== null);
     this.sectionObserver = new IntersectionObserver(
       entries => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-          const section = SECTION_BY_ID[entry.target.id];
+          const section = SITE_SECTIONS.find(s => SECTION_DOM_ID[s] === entry.target.id);
           if (!section) continue;
           this.sync.setActiveSection(section);
           document.body.dataset['activeSection'] = section;
         }
       },
-      { rootMargin: '-45% 0px -45% 0px' }
+      SECTION_BAND
     );
     for (const target of targets) {
       this.sectionObserver.observe(target);

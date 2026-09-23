@@ -1,13 +1,23 @@
-import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, signal, PLATFORM_ID, inject, computed } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
+/**
+ * How much of the scene this visit gets:
+ *  - `room`: the whole room — rack, shelf, whiteboard, shadows, bloom;
+ *  - `desk`: the terminal and laptop on the desk only, no post-processing
+ *    (phones and modest hardware);
+ *  - `css`: no WebGL at all — the designed flat page.
+ */
+export type Tier = 'room' | 'desk' | 'css';
 export type RenderStyle = '3d' | 'css';
 
 /**
- * Everything decide3D needs, lifted out of the browser so the decision is a
- * pure, table-testable function.
+ * Everything decideTier needs, lifted out of the browser so the decision is
+ * a pure, table-testable function.
  */
 export interface CapabilityProbe {
+  /** `?tier=` from the URL, if it names a tier. */
+  forced: Tier | null;
   no3d: boolean;
   reducedMotion: boolean;
   webgl: boolean;
@@ -17,37 +27,40 @@ export interface CapabilityProbe {
 }
 
 export interface CapabilityDecision {
-  render: RenderStyle;
+  tier: Tier;
   reason: string;
 }
 
+const TIERS: readonly Tier[] = ['room', 'desk', 'css'];
+
+export function isTier(value: string | null): value is Tier {
+  return value !== null && (TIERS as readonly string[]).includes(value);
+}
+
 /**
- * The 3D gate, as a pure function.
+ * The tier gate, as a pure function.
  *
  * Order matters: cheap, certain signals first. A user who asked for no 3D
- * gets it no matter what their GPU is; a reduced-motion preference beats
- * hardware capability because motion, not fidelity, is the problem there.
+ * gets none whatever their GPU; a reduced-motion preference beats hardware,
+ * because a camera flying through a room is exactly the motion it asks to
+ * avoid. Weak or mobile hardware still gets the desk — 3D, but small.
  */
-export function decide3D(probe: CapabilityProbe): CapabilityDecision {
-  if (probe.no3d) {
-    return { render: 'css', reason: 'user-override' };
-  }
-  if (probe.reducedMotion) {
-    return { render: 'css', reason: 'reduced-motion' };
-  }
-  if (!probe.webgl) {
-    return { render: 'css', reason: 'no-webgl' };
-  }
-  if (probe.mobile) {
-    return { render: 'css', reason: 'mobile' };
-  }
-  if (probe.deviceMemory !== undefined && probe.deviceMemory <= 4) {
-    return { render: 'css', reason: 'low-memory' };
-  }
+export function decideTier(probe: CapabilityProbe): CapabilityDecision {
+  if (probe.forced) return { tier: probe.forced, reason: 'forced' };
+  if (probe.no3d) return { tier: 'css', reason: 'user-override' };
+  if (probe.reducedMotion) return { tier: 'css', reason: 'reduced-motion' };
+  if (!probe.webgl) return { tier: 'css', reason: 'no-webgl' };
+  if (probe.mobile) return { tier: 'desk', reason: 'mobile' };
+  if (probe.deviceMemory !== undefined && probe.deviceMemory <= 4) return { tier: 'desk', reason: 'low-memory' };
   if (probe.hardwareConcurrency !== undefined && probe.hardwareConcurrency <= 4) {
-    return { render: 'css', reason: 'low-cores' };
+    return { tier: 'desk', reason: 'low-cores' };
   }
-  return { render: '3d', reason: 'ok' };
+  return { tier: 'room', reason: 'ok' };
+}
+
+/** One step down: room → desk → css. */
+export function stepDown(tier: Tier): Tier {
+  return tier === 'room' ? 'desk' : 'css';
 }
 
 interface NavigatorWithHints extends Navigator {
@@ -59,11 +72,12 @@ export class CapabilityService {
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /** How the page is rendering right now. CSS is the default: on the server,
-   *  before detection, and after a runtime downgrade, the CSS fallback is
-   *  what a visitor sees. */
-  readonly render = signal<RenderStyle>('css');
+  /** The current tier. CSS is the default: on the server, before
+   *  detection, and after the last downgrade, the flat page is what a
+   *  visitor sees. */
+  readonly tier = signal<Tier>('css');
   readonly reason = signal('server');
+  readonly render = computed<RenderStyle>(() => (this.tier() === 'css' ? 'css' : '3d'));
 
   constructor() {
     if (this.isBrowser) {
@@ -76,37 +90,41 @@ export class CapabilityService {
     const w = this.document.defaultView;
     if (!w) return;
 
+    const params = new URLSearchParams(w.location.search);
+    const forced = params.get('tier');
     const probe: CapabilityProbe = {
-      no3d: new URLSearchParams(w.location.search).has('no3d'),
+      forced: isTier(forced) ? forced : null,
+      no3d: params.has('no3d'),
       reducedMotion: w.matchMedia('(prefers-reduced-motion: reduce)').matches,
       webgl: this.hasWebgl(),
-      mobile: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent)
-        && w.matchMedia('(pointer: coarse)').matches,
+      mobile: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) && w.matchMedia('(pointer: coarse)').matches,
       deviceMemory: (navigator as NavigatorWithHints).deviceMemory,
       hardwareConcurrency: navigator.hardwareConcurrency
     };
 
-    this.apply(decide3D(probe));
+    this.apply(decideTier(probe));
   }
 
-  /** Runtime self-downgrade: the scene measured its own frame times and lost
-   *  the budget. Swap to the CSS fallback for the rest of the visit. */
+  /** Runtime self-downgrade: the scene lost its frame budget, its context,
+   *  or failed to load. Step down one tier for the rest of the visit. */
   downgrade(reason: string): void {
-    if (this.render() === 'css') return;
-    this.apply({ render: 'css', reason });
+    if (this.tier() === 'css') return;
+    this.apply({ tier: stepDown(this.tier()), reason });
   }
 
   private apply(decision: CapabilityDecision): void {
-    this.render.set(decision.render);
+    this.tier.set(decision.tier);
     this.reason.set(decision.reason);
-    this.document.documentElement.dataset['render'] = decision.render;
-    console.info('[scene] render mode:', decision.render, `(${decision.reason})`);
+    const root = this.document.documentElement;
+    root.dataset['render'] = decision.tier === 'css' ? 'css' : '3d';
+    root.dataset['tier'] = decision.tier;
+    console.info('[scene] tier:', decision.tier, `(${decision.reason})`);
   }
 
   private hasWebgl(): boolean {
     try {
       const canvas = this.document.createElement('canvas');
-      return !!(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
+      return !!canvas.getContext('webgl2');
     } catch {
       return false;
     }

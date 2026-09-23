@@ -10,7 +10,10 @@
     "lint": "ng lint",
     "audit:dist": "node scripts/audit-dist.mjs",
     "audit:browser": "node scripts/audit-browser.mjs",
-    "audit": "npm run audit:dist && npm run audit:browser"
+    "audit": "npm run audit:dist && npm run audit:browser",
+    "art:preview": "scripts/art.sh --cpu --preview /tmp/room-preview.png",
+    "art:build": "scripts/art.sh --out art/out && node scripts/pack-room.mjs",
+    "art:pack": "node scripts/pack-room.mjs"
   },
   "prettier": {
     "overrides": [
@@ -40,13 +43,18 @@
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.4",
     "@eslint/js": "^10.0.1",
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "@types/node": "^20.17.19",
     "@types/three": "^0.186.0",
     "angular-eslint": "22.1.0",
     "eslint": "^10.6.0",
     "istanbul-lib-instrument": "^6.0.3",
     "jsdom": "^30.0.1",
+    "meshoptimizer": "^1.2.0",
     "playwright": "^1.63.0",
+    "sharp": "^0.35.4",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.62.1",
     "vitest": "^4.0.8"

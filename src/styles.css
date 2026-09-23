@@ -60,6 +60,20 @@
 
   --measure: 65ch;
   --header-h: 64px;
+
+  /* layout + touch targets */
+  --container-max: 1080px;
+  --btn-min: 44px;
+
+  /* terminal geometry */
+  --term-caret-w: 0.62em;
+  --term-caret-h: 1.05em;
+  --term-caret-shift: 0.18em;
+  --term-screen-min: 10.5em;
+
+  /* intro scroll run: doorway → desk → through the glass */
+  --intro-run: 420vh;
+
   color-scheme: dark;
 }
 
@@ -149,7 +163,8 @@ a:hover {
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip: rect(0 0 0 0); /* legacy fallback */
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -178,6 +193,14 @@ a:hover {
   display: none;
 }
 
+.scene-host {
+  transition: opacity 450ms ease;
+}
+
+:root[data-portal='in'] .scene-host {
+  opacity: 0;
+}
+
 /* ---- Shell ---- */
 .shell {
   position: relative;
@@ -197,39 +220,8 @@ a:hover {
 }
 
 .section-inner {
-  max-width: 1080px;
+  max-width: var(--container-max);
   margin: 0 auto;
-}
-
-/* Sections that carry content sit on a translucent dark panel so type
-   always wins over the canvas; the canvas still breathes through.
-   No backdrop blur — plain alpha is one composite pass, blur is another. */
-.section--panel {
-  background: var(--panel);
-  border-top: 1px solid var(--hairline);
-}
-
-.prose {
-  max-width: var(--measure);
-  color: var(--ink-soft);
-}
-
-.prose p + p {
-  margin-top: var(--sp-3);
-}
-
-.section-kicker {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: var(--sp-2);
-}
-
-.section-title {
-  font-size: clamp(2rem, 4.5vw, 2.75rem);
-  margin-bottom: var(--sp-4);
 }
 
 .lede {
@@ -265,7 +257,7 @@ a:hover {
 }
 
 .site-header-inner {
-  max-width: 1080px;
+  max-width: var(--container-max);
   margin: 0 auto;
   min-height: var(--header-h);
   padding: 0 var(--sp-3);
@@ -303,7 +295,7 @@ a:hover {
 }
 
 .site-nav a {
-  min-height: 44px;
+  min-height: var(--btn-min);
   display: inline-flex;
   align-items: center;
   padding: 0 var(--sp-2);
@@ -319,36 +311,111 @@ a:hover {
   border-bottom-color: var(--accent);
 }
 
-/* ---- Hero ---- */
-.hero {
-  min-height: calc(100svh - var(--header-h));
-  display: grid;
-  align-content: center;
+/* ---- Intro: the room ---- */
+/* In the 3D tiers the intro is a long scroll run under a sticky stage: the
+   scroll walks the camera from the doorway to the desk and through the
+   glass. The plate and station nav fade as you sit down (--intro-fade is
+   written by HeroComponent, 1 → 0). */
+.intro {
+  position: relative;
+  z-index: 1; /* above the fixed canvas host */
 }
 
-.hero-inner {
+.intro__stage {
+  min-height: calc(100svh - var(--header-h));
+  display: grid;
+  align-items: center;
+  padding: var(--sp-5) var(--sp-3);
+}
+
+.intro__inner {
+  width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-5);
 }
 
 @media (min-width: 1024px) {
-  .hero-inner {
+  :root[data-render='css'] .intro__inner {
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    align-items: center;
+    align-items: start;
     column-gap: var(--sp-6);
+  }
+
+  :root[data-render='css'] .stations,
+  :root[data-render='css'] .intro__cue {
+    grid-column: 1;
+  }
+
+  :root[data-render='css'] .hero-visual {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
   }
 }
 
-/* A faint phosphor bloom behind the hero, css mode only —
-   in 3d mode the machine itself is the light source. */
-:root[data-render='css'] .hero {
-  background:
-    radial-gradient(55% 45% at 72% 44%, rgba(102, 242, 166, 0.06), transparent 70%);
+/* A faint phosphor bloom behind the intro, css tier only —
+   in 3D the tube itself is the light source. */
+:root[data-render='css'] .intro {
+  background: radial-gradient(55% 45% at 72% 44%, rgba(102, 242, 166, 0.06), transparent 70%);
 }
 
-.hero-copy {
-  max-width: var(--measure);
+:root[data-render='3d'] .intro {
+  height: var(--intro-run);
+}
+
+/* the desk tier starts closer, so the walk is shorter */
+:root[data-tier='desk'] {
+  --intro-run: 300vh;
+}
+
+:root[data-render='3d'] .intro__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 0;
+  align-items: stretch;
+  padding: calc(var(--header-h) + var(--sp-4)) var(--sp-3) var(--sp-4);
+  pointer-events: none;
+}
+
+:root[data-render='3d'] .intro__inner {
+  grid-template-rows: auto 1fr auto;
+  opacity: var(--intro-fade, 1);
+  visibility: var(--intro-visibility, visible);
+}
+
+:root[data-station] .intro__inner {
+  visibility: hidden;
+}
+
+/* A station is a place in the room, not a scroll position: while one is
+   open the page underneath cannot move. */
+:root[data-station] {
+  overflow: hidden;
+}
+
+:root[data-render='3d'] .intro__plate,
+:root[data-render='3d'] .stations,
+:root[data-render='3d'] .intro__cue {
+  pointer-events: auto;
+}
+
+:root[data-render='3d'] .stations {
+  align-self: end;
+}
+
+:root[data-render='3d'] .hero-visual {
+  display: none;
+}
+
+.intro__plate {
+  max-width: 36rem;
+}
+
+.intro__cmd {
+  color: var(--ink-faint);
+  margin-bottom: var(--sp-1);
 }
 
 .hero-name {
@@ -360,6 +427,38 @@ a:hover {
   max-width: 12ch;
 }
 
+:root[data-render='3d'] .hero-name {
+  font-size: 2.25rem;
+}
+
+:root[data-render='3d'] .hero-lede {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+:root[data-render='3d'] .station-link {
+  background: transparent;
+}
+
+@media (max-width: 720px) {
+  /* phones: the pane docks to the bottom, the room shows above it */
+  :root[data-render='3d'] .intro__inner {
+    grid-template-rows: 1fr auto;
+    align-content: end;
+  }
+
+  :root[data-render='3d'] .intro__panel {
+    align-self: end;
+    width: 100%;
+    padding: var(--sp-2);
+  }
+
+  :root[data-render='3d'] .hero-lede,
+  :root[data-render='3d'] .hero-meta {
+    display: none;
+  }
+}
+
 .hero-name .accent {
   color: var(--accent);
 }
@@ -369,28 +468,125 @@ a:hover {
 }
 
 .hero-meta {
-  margin-top: var(--sp-4);
-  max-width: var(--measure);
-  color: var(--ink-soft);
+  margin-top: var(--sp-3);
+  display: grid;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
 }
 
-.hero-meta .mono {
-  display: block;
-  margin-bottom: var(--sp-1);
+.hero-meta div {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.hero-meta dt {
+  min-width: 9ch;
   color: var(--ink-faint);
 }
 
-.hero-meta .mono strong {
+.hero-meta dd {
   color: var(--ink-soft);
-  font-weight: 500;
 }
 
-.hero-cta {
-  margin-top: var(--sp-5);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+/* The station nav is `ls` output: one row per prop, columns aligned. */
+.stations__head {
+  color: var(--ink-faint);
+  margin-bottom: var(--sp-1);
+}
+
+.stations__list {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  max-width: 34rem;
+}
+
+.station-link {
+  width: 100%;
+  min-height: var(--btn-min);
+  display: grid;
+  grid-template-columns: 3ch 11ch minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-1);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  text-align: left;
+  color: var(--ink-soft);
+  background: rgba(8, 11, 9, 0.55);
+  border: 0;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.station-link__key {
+  color: var(--ink-faint);
+}
+
+.station-link__name {
+  color: var(--accent);
+}
+
+.station-link__what {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* inverse video on hover/focus: the phosphor fills the row */
+.station-link:hover,
+.station-link:focus-visible,
+.station-link[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--bg);
+  border-left-color: var(--accent-bright);
+}
+
+.station-link:hover .station-link__key,
+.station-link:hover .station-link__name,
+.station-link:focus-visible .station-link__key,
+.station-link:focus-visible .station-link__name,
+.station-link[aria-pressed='true'] .station-link__key,
+.station-link[aria-pressed='true'] .station-link__name {
+  color: var(--bg);
+}
+
+.station-link:focus-visible {
+  outline-offset: 2px;
+}
+
+.intro__cue {
+  justify-self: start;
+  display: inline-flex;
   gap: var(--sp-1);
+  align-items: center;
+  min-height: var(--btn-min);
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.intro__cue:hover {
+  color: var(--accent);
+}
+
+:root[data-render='3d'] .intro__cue-css,
+:root[data-render='css'] .intro__cue-3d {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .station-link {
+    grid-template-columns: 3ch minmax(0, 1fr);
+  }
+
+  .station-link__what {
+    grid-column: 2;
+    font-size: 0.8125rem;
+    white-space: normal;
+  }
 }
 
 /* CTAs are terminal prompt lines, not buttons — the primary one is
@@ -398,7 +594,7 @@ a:hover {
 .prompt-link {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--btn-min);
   padding: 0 var(--sp-1);
   font-size: 1.0625rem;
   color: var(--ink-soft);
@@ -472,7 +668,7 @@ a:hover {
 
 .term__screen {
   padding: var(--sp-3);
-  min-height: 10.5em; /* six 1.7-line-height lines at 0.875rem, + slack */
+  min-height: var(--term-screen-min); /* six 1.7-line-height lines at 0.875rem, + slack */
   font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.7;
@@ -500,10 +696,10 @@ html.js .term__screen.is-typing {
 
 .term__caret {
   display: inline-block;
-  width: 0.62em;
-  height: 1.05em;
+  width: var(--term-caret-w);
+  height: var(--term-caret-h);
   margin-left: 1px;
-  transform: translateY(0.18em);
+  transform: translateY(var(--term-caret-shift));
   background: var(--accent);
   animation: caret-blink 1.06s steps(1) infinite;
 }
@@ -527,77 +723,8 @@ html.js .term__screen.is-typing {
 }
 
 /* ---- Buttons / quiet links ---- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 var(--sp-3);
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  text-decoration: none;
-  border-radius: 4px;
-  border: 1px solid var(--hairline);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
-}
-
-.btn:hover {
-  border-color: var(--ink-soft);
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
-}
-
-.btn--primary:hover {
-  background: var(--accent-bright);
-  border-color: var(--accent-bright);
-  color: var(--bg);
-}
 
 /* ---- Work: curated cards + GitHub grid ---- */
-.work-featured {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  background: rgba(11, 12, 10, 0.55);
-  margin-bottom: var(--sp-5);
-}
-
-@media (min-width: 768px) {
-  .work-featured {
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-  }
-}
-
-.work-featured h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.work-featured p {
-  color: var(--ink-soft);
-  max-width: var(--measure);
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-  gap: var(--sp-3);
-}
 
 .card {
   display: flex;
@@ -615,72 +742,7 @@ html.js .term__screen.is-typing {
   transform: translateY(-2px);
 }
 
-.card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
-}
-
-.card-title {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
-.card-title a {
-  text-decoration: none;
-}
-
-.card-title a:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-}
-
-.card-tag {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
-.card-desc {
-  color: var(--ink-soft);
-  font-size: 0.875rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-meta {
-  margin-top: auto;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-}
-
-.grid-label {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-2);
-  margin: var(--sp-5) 0 var(--sp-3);
-}
-
-.grid-label h3 {
-  font-size: 1.125rem;
-  font-weight: 500;
-}
-
 /* loading skeletons */
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-  gap: var(--sp-3);
-}
-
 .skeleton {
   height: 148px;
   border: 1px solid var(--hairline);
@@ -702,41 +764,7 @@ html.js .term__screen.is-typing {
   }
 }
 
-.grid-error {
-  padding: var(--sp-4);
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  color: var(--ink-soft);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
 /* ---- AI stack ---- */
-.stack-spec {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1) var(--sp-3);
-  margin-bottom: var(--sp-5);
-}
-
-.stack-spec span {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
-}
-
-.stack-spec span::before {
-  content: '·';
-  margin-right: var(--sp-3);
-  color: var(--hairline);
-}
-
-.stack-spec span:first-child::before {
-  content: '';
-  margin: 0;
-}
 
 .model-table {
   width: 100%;
@@ -792,80 +820,9 @@ html.js .term__screen.is-typing {
   color: var(--accent);
 }
 
-.model-note {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--ink-faint);
-  margin-top: calc(-1 * var(--sp-3));
-  margin-bottom: var(--sp-5);
-}
-
-/* CSS fallback for the 3D "one engine, four backends" visual */
-.stack-bars {
-  display: none;
-}
-
-:root[data-render='css'] .stack-bars {
-  display: grid;
-  gap: var(--sp-1);
-  margin: 0 0 var(--sp-5) var(--sp-2);
-}
-
-.stack-bars .bar {
-  height: 18px;
-  border-radius: 4px;
-  background: #1a211b;
-  transition: background-color 200ms ease;
-}
-
-.stack-bars .bar:nth-child(1) { width: 62%; }
-.stack-bars .bar:nth-child(2) { width: 82%; }
-.stack-bars .bar:nth-child(3) { width: 96%; }
-.stack-bars .bar:nth-child(4) { width: 74%; }
-
-:root[data-render='css'] .stack-bars .bar[data-active] {
-  background: var(--accent);
-  box-shadow: 0 0 12px rgba(102, 242, 166, 0.35);
-}
-
 /* ---- About ---- */
-.pull-line {
-  margin: var(--sp-5) 0;
-  font-family: var(--font-mono);
-  font-size: 0.9375rem;
-  color: var(--accent);
-}
-
-.pull-line .dim {
-  color: var(--ink-faint);
-}
 
 /* ---- Contact ---- */
-.contact-line {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  max-width: 28ch;
-}
-
-.contact-line a {
-  color: var(--accent);
-  text-decoration-color: rgba(102, 242, 166, 0.4);
-}
-
-.contact-line a:hover {
-  color: var(--accent-bright);
-  text-decoration-color: var(--accent-bright);
-}
-
-.contact-links {
-  margin-top: var(--sp-5);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
 
 /* Tall enough that its top reaches the page's center band (45-55% viewport
    height) when the page is scrolled to the end — the band is what drives
@@ -888,7 +845,7 @@ html.js .term__screen.is-typing {
 }
 
 .site-footer-inner {
-  max-width: 1080px;
+  max-width: var(--container-max);
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -902,7 +859,7 @@ html.js .term__screen.is-typing {
 
 .site-footer a {
   color: var(--ink-soft);
-  min-height: 44px;
+  min-height: var(--btn-min);
   display: inline-flex;
   align-items: center;
   text-decoration: none;
@@ -913,19 +870,643 @@ html.js .term__screen.is-typing {
   text-decoration: underline;
 }
 
-/* ---- Scroll reveal (subtle, and only when JS has confirmed it can run) ----
-   The hidden state is scoped to html.js, which main.ts only adds when
-   IntersectionObserver exists. Without JS — prerendered HTML, broken
-   hydration, ancient browser — everything is simply visible. */
-@media (prefers-reduced-motion: no-preference) {
-  html.js .reveal {
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 500ms ease, transform 500ms ease;
+/* ---- Reduced motion: remaining continuous motion, consolidated ---- */
+@media (prefers-reduced-motion: reduce) {
+  .scene-host canvas {
+    animation: none;
   }
 
-  html.js .reveal.is-visible {
-    opacity: 1;
+  .card:hover {
     transform: none;
   }
+}
+
+/* ---- Margin utilities (replaced inline styles) ---- */
+
+/* ---- Portal: through the glass ---- */
+/* Once the camera is inside the tube the page is the screen: fine
+   scanlines, a tube vignette, and one bright flash on the way in. */
+.crt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 450ms ease;
+  background:
+    radial-gradient(120% 95% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+}
+
+:root[data-portal='in'] .crt-overlay {
+  opacity: 1;
+  animation: crt-enter 520ms ease-out;
+}
+
+@keyframes crt-enter {
+  0% { background-color: rgba(141, 247, 189, 0.22); }
+  100% { background-color: transparent; }
+}
+
+/* ---- Room hover label ---- */
+.hover-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  pointer-events: none;
+  padding: 2px var(--sp-1);
+  font-size: 0.8125rem;
+  color: var(--accent-bright);
+  background: rgba(6, 8, 7, 0.82);
+  border: 1px solid rgba(102, 242, 166, 0.35);
+  white-space: nowrap;
+}
+
+.hover-label__bracket {
+  color: var(--ink-faint);
+  padding: 0 2px;
+}
+
+/* ---- Station panel ---- */
+.station-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(560px, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background: #080c09;
+  border: 0;
+  border-left: 1px solid var(--hairline);
+  box-shadow: -24px 0 64px rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.station-panel[open] {
+  animation: panel-in 240ms ease-out;
+}
+
+@keyframes panel-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* The room stays visible beside the panel; the CSS tier dims the page. */
+.station-panel::backdrop {
+  background: transparent;
+}
+
+:root[data-render='css'] .station-panel::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.station-panel__inner {
+  padding: var(--sp-4) var(--sp-4) var(--sp-6);
+}
+
+.station-panel__head {
+  position: relative;
+  padding-right: calc(var(--btn-min) + var(--sp-2));
+  margin-bottom: var(--sp-4);
+}
+
+.station-panel__cmd {
+  color: var(--ink-soft);
+  font-size: 0.8125rem;
+  margin-bottom: var(--sp-1);
+  overflow-wrap: anywhere;
+}
+
+.station-panel__cmd .prompt {
+  color: var(--accent);
+}
+
+.station-panel__title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+.station-panel__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: var(--btn-min);
+  min-height: var(--btn-min);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+}
+
+.station-panel__close:hover {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.panel-block + .panel-block {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--hairline);
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--sp-2);
+}
+
+.panel-prose {
+  color: var(--ink-soft);
+  margin-bottom: var(--sp-3);
+}
+
+.node-list {
+  list-style: none;
+  display: grid;
+  gap: var(--sp-3);
+}
+
+/* the label-maker tape, as on the machines in the room */
+.node__tape {
+  display: inline-block;
+  padding: 1px var(--sp-1);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #141414;
+  background: #e8e2cf;
+  margin-bottom: var(--sp-1);
+}
+
+.node__role {
+  margin-top: var(--sp-1);
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.spec-list {
+  display: grid;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.spec-list div {
+  display: grid;
+  grid-template-columns: 9ch minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.spec-list--wide div {
+  grid-template-columns: 12ch minmax(0, 1fr);
+}
+
+.spec-list dt {
+  color: var(--ink-faint);
+}
+
+.spec-list dd {
+  color: var(--ink);
+}
+
+.model-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.model-table th,
+.model-table td {
+  padding: 6px var(--sp-1) 6px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.model-table thead th {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+.model-table tbody th {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.model-table td {
+  color: var(--ink-soft);
+}
+
+.floppy-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+}
+
+.floppy-chip {
+  min-height: var(--btn-min);
+  padding: 0 var(--sp-2);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: #141414;
+  background: #efeadb;
+  border: 0;
+  border-top: 4px solid #3a3f44;
+  cursor: pointer;
+}
+
+.floppy-chip[aria-pressed='true'] {
+  background: var(--accent);
+  border-top-color: var(--accent-bright);
+}
+
+.floppy-detail__title {
+  font-size: 1.25rem;
+  margin-bottom: var(--sp-2);
+}
+
+.tag-row {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  border: 1px solid var(--hairline);
+  padding: 2px var(--sp-1);
+}
+
+/* ---- Diagrams (the whiteboard's accessible twin) ---- */
+.diagram {
+  margin: var(--sp-3) 0 0;
+}
+
+.diagram svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #0b100c;
+  border: 1px solid var(--hairline);
+}
+
+.diagram__box {
+  fill: #0e1510;
+  stroke-width: 1.5;
+}
+
+.diagram__box[data-ink='blue'] { stroke: #7fa7ff; }
+.diagram__box[data-ink='black'] { stroke: var(--ink-soft); }
+.diagram__box[data-ink='red'] { stroke: #ff8a7a; }
+.diagram__box[data-ink='green'] { stroke: var(--accent); }
+
+.diagram__label {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  fill: var(--ink);
+}
+
+.diagram__edge {
+  stroke: var(--ink-faint);
+  stroke-width: 1.5;
+}
+
+.diagram__edge--dashed {
+  stroke-dasharray: 6 5;
+}
+
+.diagram__arrow {
+  fill: var(--ink-faint);
+}
+
+.diagram__edge-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  fill: #ff8a7a;
+}
+
+.diagram figcaption {
+  margin-top: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 720px) {
+  .station-panel {
+    inset: auto 0 0 0;
+    width: 100vw;
+    height: 86dvh;
+    border-left: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .station-panel__inner {
+    padding: var(--sp-3) var(--sp-3) var(--sp-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station-panel[open],
+  :root[data-portal='in'] .crt-overlay {
+    animation: none;
+  }
+}
+
+/* ---- The session behind the glass ---- */
+/* Past the portal the page is a terminal: a guest session on joshua's
+   machine. Each section is one command and its output. Text is phosphor
+   green with a slight glow; nothing is a card or a button. */
+:root {
+  --phosphor: #7dfbb4;
+  --phosphor-bright: #c4ffdc;
+  --phosphor-dim: #3f9a68;
+  --phosphor-faint: #2b6a48;
+  --phosphor-glow: 0 0 3px rgba(125, 251, 180, 0.55), 0 0 12px rgba(125, 251, 180, 0.16);
+}
+
+.tty {
+  position: relative;
+  z-index: 1;
+  padding: var(--sp-4) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--phosphor);
+  text-shadow: var(--phosphor-glow);
+  background: #030604;
+  scroll-margin-top: var(--header-h);
+}
+
+.tty__inner {
+  max-width: 88ch;
+  margin: 0 auto;
+}
+
+.tty__cmd {
+  margin-top: var(--sp-4);
+  color: var(--phosphor-bright);
+  overflow-wrap: anywhere;
+}
+
+.tty__inner > .tty__cmd:first-of-type,
+.tty__inner > h2 + .tty__cmd {
+  margin-top: 0;
+}
+
+.tty__ps1 {
+  color: var(--phosphor-dim);
+}
+
+.tty__out {
+  margin-top: var(--sp-1);
+}
+
+.tty__out p + p {
+  margin-top: var(--sp-2);
+}
+
+.tty__prose {
+  max-width: 72ch;
+}
+
+.tty__dim {
+  color: var(--phosphor-dim);
+}
+
+.tty__bright {
+  color: var(--phosphor-bright);
+}
+
+.tty__err {
+  color: #ffb3a1;
+  text-shadow: 0 0 3px rgba(255, 150, 120, 0.5);
+}
+
+.tty__link {
+  color: var(--phosphor-bright);
+  text-decoration: underline;
+  text-decoration-color: var(--phosphor-dim);
+  text-underline-offset: 3px;
+}
+
+/* inverse video, as a selected line on a real terminal */
+.tty__link:hover,
+.tty__link:focus-visible,
+.tty__button:hover,
+.tty__button:focus-visible {
+  color: #031006;
+  background: var(--phosphor);
+  text-decoration: none;
+  text-shadow: none;
+  outline: none;
+}
+
+.tty__button {
+  font: inherit;
+  color: var(--phosphor-bright);
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: var(--btn-min);
+  cursor: pointer;
+  text-shadow: inherit;
+}
+
+.tty__ls {
+  list-style: none;
+  margin-top: var(--sp-1);
+}
+
+.tty__ls li {
+  display: grid;
+  grid-template-columns: 11ch 18ch minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.tty__table {
+  margin-top: var(--sp-1);
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tty__table th,
+.tty__table td {
+  padding: 0 var(--sp-2) 0 0;
+  text-align: left;
+  font-weight: 400;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.tty__table thead th {
+  color: var(--phosphor-dim);
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+}
+
+.tty__table tbody th {
+  color: var(--phosphor-bright);
+}
+
+.tty__desc td {
+  padding-bottom: var(--sp-1);
+  color: var(--phosphor-dim);
+  white-space: normal;
+}
+
+.tty__on th,
+.tty__on td {
+  color: #031006;
+  background: var(--phosphor);
+  text-shadow: none;
+}
+
+.tty__kv div {
+  display: grid;
+  grid-template-columns: 8ch minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.tty__kv dt {
+  color: var(--phosphor-dim);
+}
+
+.tty__spinner::after {
+  content: '|';
+  display: inline-block;
+  margin-left: 1ch;
+  animation: tty-spin 480ms steps(4) infinite;
+}
+
+@keyframes tty-spin {
+  0% { content: '|'; }
+  25% { content: '/'; }
+  50% { content: '-'; }
+  75% { content: '\\'; }
+}
+
+.tty__cursor {
+  display: inline-block;
+  width: 0.62em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px rgba(125, 251, 180, 0.6);
+  animation: tty-blink 1060ms steps(1) infinite;
+}
+
+@keyframes tty-blink {
+  50% { opacity: 0; }
+}
+
+.tty__last {
+  margin-top: var(--sp-5);
+  padding-bottom: var(--sp-6);
+}
+
+@media (max-width: 720px) {
+  .tty {
+    font-size: 0.8125rem;
+  }
+
+  .tty__ls li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-bottom: var(--sp-1);
+  }
+
+  .tty__ls li > .tty__dim {
+    display: none;
+  }
+
+  /* long tables scroll inside themselves, as they would in a terminal */
+  .tty__table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Through the glass, the viewport is the tube: a dark bezel with rounded
+   corners frames it, over scanlines and a vignette (.crt-overlay). */
+.crt-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 450ms ease;
+  border: 14px solid #16140f;
+  border-radius: 34px / 30px;
+  box-shadow:
+    0 0 0 40px #16140f,
+    inset 0 0 28px 10px rgba(0, 0, 0, 0.85),
+    inset 0 0 90px 30px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-portal='in'] .crt-frame {
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .crt-frame {
+    border-width: 8px;
+    border-radius: 22px / 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tty__cursor,
+  .tty__spinner::after {
+    animation: none;
+  }
+}
+
+/* the login shown the first time through the glass (BootComponent) */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  padding: 12vh max(8vw, 28px);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--phosphor);
+  text-shadow: var(--phosphor-glow);
+  background: #030604;
+  transition: opacity 300ms ease;
+}
+
+.boot p {
+  min-height: 1.7em;
+  white-space: pre;
+}
+
+.boot--out {
+  opacity: 0;
+}
+
+/* nav items read like numbered terminal windows: 0:work 1:ai-stack … */
+.nav-num {
+  color: var(--ink-faint);
+  margin-right: 0.15em;
 }

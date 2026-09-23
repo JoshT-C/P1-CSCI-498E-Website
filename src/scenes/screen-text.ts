@@ -44,10 +44,10 @@ export interface ScreenTextOptions {
   readonly maxLines: number;
   /** Hard cap on columns per line (prompt + text combined). */
   readonly maxCols: number;
-  /** Typing speed, characters per second. Default 45. */
-  readonly charsPerSecond?: number;
-  /** Pause before each line after the first. Default 240 ms. */
-  readonly linePauseMs?: number;
+  /** Typing speed, characters per second. */
+  readonly charsPerSecond: number;
+  /** Pause before each line after the first, in ms. */
+  readonly linePauseMs: number;
   /** Caret blink period; the caret is visible for the first half. Default 1000 ms. */
   readonly caretPeriodMs?: number;
   /** Reduced-motion mode: full frame on first tick, caret frozen on. */
@@ -74,8 +74,6 @@ interface DisplayLine {
   readonly plain: string;
 }
 
-const DEFAULT_CPS = 45;
-const DEFAULT_LINE_PAUSE_MS = 240;
 const DEFAULT_CARET_PERIOD_MS = 1000;
 /** Defensive clamp so one stalled frame cannot type an unbounded burst. */
 const MAX_TICK_MS = 1000;
@@ -112,8 +110,8 @@ function buildQueue(
 export function createTerminal(options: ScreenTextOptions): Terminal {
   const maxLines = Math.max(1, Math.floor(options.maxLines));
   const maxCols = Math.max(1, Math.floor(options.maxCols));
-  const cps = Math.max(1, options.charsPerSecond ?? DEFAULT_CPS);
-  const linePauseMs = Math.max(0, options.linePauseMs ?? DEFAULT_LINE_PAUSE_MS);
+  const cps = Math.max(1, options.charsPerSecond);
+  const linePauseMs = Math.max(0, options.linePauseMs);
   const caretPeriodMs = Math.max(20, options.caretPeriodMs ?? DEFAULT_CARET_PERIOD_MS);
   const isStatic = options.static === true;
 

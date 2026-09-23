@@ -14,8 +14,9 @@ function fastTerminal(extra: Partial<Parameters<typeof createTerminal>[0]> = {})
   return createTerminal({
     maxLines: 14,
     maxCols: 40,
-    charsPerSecond: 1000, // one char per ms — tests stay fast
-    linePauseMs: 100,
+    // the production cadence (terminal.config.ts); tests stay fast via the tick size
+    charsPerSecond: 45,
+    linePauseMs: 320,
     caretPeriodMs: 1000,
     ...extra
   });
@@ -27,7 +28,7 @@ describe('screen-text', () => {
     term.setSection('hero', LINES);
     let sawPartial = false;
     for (let i = 0; i < 300; i++) {
-      const snap = term.tick(1);
+      const snap = term.tick(10); // 3 s of clock — enough for the whole queue at 45 cps
       if (snap && snap.lines.length > 0 && snap.lines.length < 3) sawPartial = true;
     }
     const s = term.snapshot();
@@ -57,7 +58,7 @@ describe('screen-text', () => {
     ];
     const term = fastTerminal({ maxCols: 40, maxLines: 14 });
     term.setSection('work', long);
-    for (let i = 0; i < 2500; i++) term.tick(1);
+    for (let i = 0; i < 2500; i++) term.tick(10);
     const s = term.snapshot();
     for (const line of s.lines) {
       expect(line.prompt.length + line.text.length).toBeLessThanOrEqual(40);
@@ -69,7 +70,7 @@ describe('screen-text', () => {
   it('hard-wraps keeping the prompt coloring on the first chunk only', () => {
     const term = fastTerminal({ maxCols: 8, maxLines: 14 });
     term.setSection('x', [{ prompt: 'ab:~$', text: 'cdef' }]);
-    for (let i = 0; i < 200; i++) term.tick(1);
+    for (let i = 0; i < 200; i++) term.tick(10);
     const s = term.snapshot();
     // 'ab:~$ cdef' (10 chars) → 8-col chunks 'ab:~$ cd' + 'ef'
     expect(s.lines).toEqual([
@@ -84,7 +85,7 @@ describe('screen-text', () => {
     }));
     const term = fastTerminal({ maxLines: 4, maxCols: 40 });
     term.setSection('stack', many);
-    for (let i = 0; i < 4000; i++) term.tick(1);
+    for (let i = 0; i < 4000; i++) term.tick(10);
     const s = term.snapshot();
     expect(s.lines.length).toBe(4);
     expect(s.lines[3].text).toBe('…');
@@ -109,10 +110,10 @@ describe('screen-text', () => {
   it('a repeat of the same section+content is a no-op', () => {
     const term = fastTerminal();
     term.setSection('hero', LINES);
-    term.tick(1);
+    term.tick(50); // 50 ms at 45 cps types a couple of characters
     const v = term.snapshot().version;
     term.setSection('hero', LINES);
-    const s = term.tick(1);
+    const s = term.tick(50);
     if (s) {
       // at most one new change (the next character) advanced the version
       expect(s.version).toBeLessThanOrEqual(v + 1);

@@ -1,0 +1,27 @@
+/**
+ * 3D scene budgets. Everything the render loop measures itself against
+ * lives here, so tuning never means hunting through the loop.
+ */
+
+/** Frame-rate governor: after a warm-up, two consecutive 2 s windows under
+ *  LOW_FPS step the scene down one tier (room → desk → CSS). */
+export const FPS_BUDGET = {
+  lowFps: 28,
+  windowMs: 2000,
+  warmupMs: 3000,
+  lowStreakNeeded: 2
+} as const;
+
+/** How long the first frame waits for the self-hosted font before drawing
+ *  the screen texture in the fallback monospace. */
+export const FONT_WAIT_MS = 1500;
+
+/** devicePixelRatio caps per tier. */
+export const DPR_CAP = { room: 2, desk: 1.5 } as const;
+
+/** Camera damping time constants, ms: scroll-driven moves track closely,
+ *  station moves glide. */
+export const CAMERA_TAU_MS = { spine: 110, station: 380 } as const;
+
+/** The tube's warm-up after the scene starts, ms. */
+export const WARMUP = { delayMs: 350, durationMs: 1600 } as const;

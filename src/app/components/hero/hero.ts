@@ -7,8 +7,10 @@ import {
   inject
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RevealDirective } from '../../directives/reveal.directive';
+import { HERO_TYPING } from '../../config/terminal.config';
 import { TERMINAL } from '../../services/content/projects';
+import { SITE_META } from '../../services/content/site';
+import { SceneSyncService, type StationId } from '../../services/scene-sync.service';
 import { SCREEN_MAX_COLS } from '../../../scenes/screen-content';
 import {
   createTerminal,
@@ -29,14 +31,36 @@ function createHeroTerminal(platformId: object): Terminal {
   return createTerminal({
     maxLines: 10,
     maxCols: SCREEN_MAX_COLS,
-    charsPerSecond: 45,
-    linePauseMs: 320,
+    ...HERO_TYPING,
     static: reduced
   });
 }
 
+interface StationEntry {
+  readonly id: StationId;
+  readonly key: string;
+  readonly name: string;
+  readonly what: string;
+}
+
+/** Spine fraction by which the plate has faded out. */
+const FADE_UNTIL = 0.28;
+
+/** The station nav: every prop in the room, reachable without a pointer. */
+const STATIONS: readonly StationEntry[] = [
+  { id: 'terminal', key: '01', name: 'terminal', what: 'projects, AI stack, about, contact' },
+  { id: 'rack', key: '02', name: 'rack', what: 'machines and models' },
+  { id: 'floppies', key: '03', name: 'floppies', what: 'projects not on GitHub' },
+  { id: 'whiteboard', key: '04', name: 'whiteboard', what: 'architecture diagrams' },
+  { id: 'laptop', key: '05', name: 'laptop', what: 'second inference machine' }
+];
+
 /**
- * The hero terminal card. The template prerenders TERMINAL.hero in full —
+ * The intro: the name plate and the station nav over the room. In the 3D
+ * tiers this section is a long scroll run with a sticky stage — scrolling
+ * through it walks the camera to the desk and through the glass.
+ *
+ * In the CSS tier it also shows the terminal card. The template prerenders TERMINAL.hero in full —
  * that is the no-JS experience. When JS runs, the same screen is cleared and
  * retyped by the shared pure screen-text machine (static under reduced
  * motion), so both modes show identical output from one source.
@@ -46,12 +70,20 @@ function createHeroTerminal(platformId: object): Terminal {
  */
 @Component({
   selector: 'app-hero',
-  imports: [RevealDirective],
   templateUrl: './hero.html'
 })
 export class HeroComponent implements AfterViewInit, OnDestroy {
   /** The static (no-JS) render of the screen lines. */
   readonly terminalLines = TERMINAL.hero;
+  readonly meta = SITE_META;
+  readonly stations = STATIONS;
+
+  private readonly sync = inject(SceneSyncService);
+  readonly station = this.sync.station;
+
+  open(id: StationId): void {
+    this.sync.openStation(id);
+  }
 
   private readonly el = inject(ElementRef<HTMLElement>);
   private readonly platformId = inject(PLATFORM_ID);
@@ -63,9 +95,14 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
   private raf = 0;
   private lastNow = 0;
   private started = false;
+  private fadeRaf = 0;
+  private section: HTMLElement | null = null;
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.section = this.el.nativeElement.querySelector('.intro');
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.onScroll();
     this.screen = this.el.nativeElement.querySelector('.term__screen');
     if (!this.screen) return;
 
@@ -99,7 +136,26 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
     this.io?.disconnect();
     cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.fadeRaf);
+    window.removeEventListener('scroll', this.onScroll);
   }
+
+  /** The plate and nav fade over the first stretch of the walk to the desk
+   *  (done when the room stops being pickable). One style write per frame
+   *  while scrolling; nothing when idle. */
+  private readonly onScroll = (): void => {
+    if (this.fadeRaf) return;
+    this.fadeRaf = requestAnimationFrame(() => {
+      this.fadeRaf = 0;
+      const el = this.section;
+      if (!el) return;
+      const run = Math.max(el.offsetHeight - window.innerHeight, 1);
+      const p = (window.scrollY - el.offsetTop) / run;
+      const fade = 1 - Math.min(Math.max(p / FADE_UNTIL, 0), 1);
+      el.style.setProperty('--intro-fade', fade.toFixed(3));
+      el.style.setProperty('--intro-visibility', fade === 0 ? 'hidden' : 'visible');
+    });
+  };
 
   private start(): void {
     if (this.started || !this.screen) return;

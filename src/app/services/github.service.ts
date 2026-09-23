@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { type Observable, TimeoutError, map, catchError, of, shareReplay, throwError, timeout } from 'rxjs';
+import { REQUEST_TIMEOUT_MS } from '../config/site.config';
 
 export interface GitHubRepo {
   id: number;
@@ -99,7 +100,6 @@ export class GitHubService {
   private readonly GITHUB_API = 'https://api.github.com';
   private readonly MAX_TECHNOLOGIES = 6;
   private readonly MAINTENANCE_THRESHOLD_MONTHS = 6;
-  private readonly REQUEST_TIMEOUT_MS = 15_000;
 
   private readonly http = inject(HttpClient);
 
@@ -130,7 +130,7 @@ export class GitHubService {
       // A stalled connection never errors on its own, which would leave every
       // caller in its loading state forever. Timing out turns it into an
       // ordinary failure: evicted below, surfaced to the UI, and retryable.
-      timeout(this.REQUEST_TIMEOUT_MS),
+      timeout(REQUEST_TIMEOUT_MS),
       catchError((error: unknown) => {
         this.cache.delete(key);
         return throwError(() => error);

@@ -1,78 +1,55 @@
-<section id="work" class="section" aria-labelledby="work-title">
-  <div class="section-inner">
-    <p class="section-kicker" appReveal>ls ~/projects</p>
-    <h2 id="work-title" class="section-title" appReveal>
-      Two things I point people at by hand
-    </h2>
-    <p class="lede" appReveal>
-      …and then the live feed of everything else public on GitHub.
-    </p>
+<section id="work" class="tty" aria-labelledby="work-title">
+  <div class="tty__inner">
+    <h2 id="work-title" class="visually-hidden">Projects</h2>
 
-    <article class="work-featured" work-index="0" appReveal>
-      <div>
-        <h3>{{ curated[0].title }}</h3>
-        <p class="card-tag">{{ curated[0].tagline }}</p>
-      </div>
-      <div>
-        <p>{{ curated[0].body }}</p>
-        <p class="card-meta" style="margin-top: 0">{{ curated[0].tags.join(' · ') }}</p>
-      </div>
-      <a class="btn" [href]="curated[0].href">{{ curated[0].hrefLabel }}</a>
-    </article>
-
-    <div class="card-grid">
-      @for (project of curated.slice(1); track project.id) {
-        <article class="card" work-index="1" appReveal>
-          <div class="card-head">
-            <h3 class="card-title">
-              <a [href]="project.href" rel="noopener">{{ project.title }}</a>
-            </h3>
-            <span class="card-tag">{{ project.tagline }}</span>
-          </div>
-          <p class="card-desc">{{ project.body }}</p>
-          <div class="card-meta">
-            <span>{{ project.tags.join(' · ') }}</span>
-            <a [href]="project.href" rel="noopener">{{ project.hrefLabel }} ↗</a>
-          </div>
-        </article>
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> ls -l ~joshua/projects</p>
+    <ul class="tty__ls">
+      @for (project of curated; track project.id) {
+        <li>
+          <span class="tty__dim">drwxr-xr-x</span>
+          <a class="tty__link" [href]="project.href" rel="noopener">{{ project.id }}/</a>
+          <span>{{ project.tagline }}</span>
+        </li>
       }
+    </ul>
+
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> cat ~joshua/projects/{{ curated[0].id }}/README</p>
+    <div class="tty__out">
+      <p class="tty__bright">{{ curated[0].title }}</p>
+      <p>{{ curated[0].body }}</p>
+      <p class="tty__dim">tags: {{ curated[0].tags.join(', ') }}</p>
+      <p><a class="tty__link" [href]="curated[0].href">{{ curated[0].hrefLabel }}</a></p>
     </div>
 
-    <div class="grid-label" appReveal>
-      <h3>More on GitHub</h3>
-      <a class="card-tag" [href]="'https://github.com/' + username" rel="noopener">{{ '@' + username }} ↗</a>
-    </div>
-
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> gh repo list {{ username }} --public --limit {{ limit }}</p>
     @if (grid().status === 'loading') {
-      <div class="skeleton-grid" aria-hidden="true">
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
-      </div>
-      <p class="visually-hidden">Loading projects from GitHub…</p>
+      <p class="tty__out tty__dim" role="status">fetching repositories from api.github.com<span class="tty__spinner" aria-hidden="true"></span></p>
     } @else if (grid().status === 'error') {
-      <div class="grid-error" role="alert">
-        <p class="mono" style="margin: 0">{{ grid().error }}</p>
-        <button class="btn" type="button" (click)="retry()">Try again</button>
+      <div class="tty__out" role="alert">
+        <p class="tty__err">error: {{ grid().error }}</p>
+        <p><button class="tty__button" type="button" (click)="retry()">[retry]</button></p>
       </div>
     } @else {
-      <div class="card-grid">
-        @for (project of grid().projects; track project.id) {
-          <article class="card">
-            <div class="card-head">
-              <h3 class="card-title">
-                <a [href]="project.githubUrl" rel="noopener">{{ project.title }}</a>
-              </h3>
-              <span class="card-tag">{{ project.language }}</span>
-            </div>
-            <p class="card-desc">{{ project.description }}</p>
-            <div class="card-meta">
-              <span>{{ project.stars }}★ · {{ project.forks }} forks · {{ project.status }} · updated {{ project.lastUpdated | date: 'MMM yyyy' }}</span>
-            </div>
-          </article>
-        }
-      </div>
+      <table class="tty__table tty__repos">
+        <caption class="visually-hidden">Public repositories on GitHub, most recently updated first</caption>
+        <thead>
+          <tr><th scope="col">name</th><th scope="col">language</th><th scope="col">stars</th><th scope="col">updated</th></tr>
+        </thead>
+        <tbody>
+          @for (project of grid().projects; track project.id) {
+            <tr>
+              <th scope="row"><a class="tty__link" [href]="project.githubUrl" rel="noopener">{{ project.title }}</a></th>
+              <td>{{ project.language }}</td>
+              <td>{{ project.stars }}</td>
+              <td>{{ project.lastUpdated | date: 'yyyy-MM-dd' }}</td>
+            </tr>
+            @if (project.description) {
+              <tr class="tty__desc"><td colspan="4">{{ project.description }}</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+      <p class="tty__out tty__dim">{{ grid().projects.length }} repositories. All of them: <a class="tty__link" [href]="'https://github.com/' + username" rel="noopener">github.com/{{ username }}</a></p>
     }
   </div>
 </section>

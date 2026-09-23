@@ -6,6 +6,7 @@
  * credential-shaped strings. When adding copy here, keep it public-safe:
  * facts a stranger reading it on the street would not regret publishing.
  */
+import { SITE_META } from './site';
 
 export const GITHUB_USERNAME = 'JoshT-C';
 
@@ -37,18 +38,18 @@ export interface CuratedProject {
 export const CURATED_PROJECTS: readonly CuratedProject[] = [
   {
     id: 'ai-stack',
-    title: 'The Local AI Stack',
-    tagline: 'One machine, one engine, four backends.',
-    body: 'A self-hosted inference stack: a single locally built llama.cpp engine serving four large models on an RTX 5090, with a chat UI, local search, and a document pipeline around it. Loopback-only — nothing on it is exposed.',
+    title: 'Local AI stack',
+    tagline: 'Four language models behind one llama.cpp build.',
+    body: 'A llama.cpp server on an RTX 5090 that runs one of four large models at a time. Open WebUI, SearXNG and Docling run beside it. Every service listens only on the loopback interface, so nothing on the machine is reachable from the network.',
     href: '#stack',
-    hrefLabel: 'Read the stack notes below ↓',
+    hrefLabel: 'Models and benchmarks below ↓',
     tags: ['llama.cpp', 'RTX 5090', 'local-first']
   },
   {
     id: 'previous-site',
-    title: 'The Previous Site',
-    tagline: 'First iteration, still running.',
-    body: 'My first full personal site — Angular on GitHub Pages, terminal-voice identity and all. It stays up at joshua_t-c.github.io as the reference this revamp is measured against.',
+    title: 'Previous site',
+    tagline: 'The GitHub Pages version this site replaces.',
+    body: 'My first personal site, built with Angular and hosted on GitHub Pages. It stays online at joshua_t-c.github.io for comparison.',
     href: 'https://joshua_t-c.github.io',
     hrefLabel: 'joshua_t-c.github.io',
     tags: ['Angular', 'GitHub Pages']
@@ -65,15 +66,15 @@ export interface ModelRow {
 }
 
 export const STACK = {
-  machine: 'RTX 5090 · 32 GB VRAM — Ryzen 9 9950X · 16c/32t — 123 GiB RAM — PCIe 5.0 x16',
+  machine: 'RTX 5090 (32 GB), Ryzen 9 9950X (16 cores), 123 GiB RAM, PCIe 5.0 x16',
 
   intro: [
-    'A System76 Thelio Mira on Bazzite: an RTX 5090 with 32 GB of VRAM next to a 16-core Ryzen 9 9950X and 123 GiB of system RAM. Everything is local — no cloud round-trip, no telemetry, no per-token billing.',
-    'The engine is a single llama.cpp build, compiled from commit-pinned source with sm_120 support, because the stock package builds did not have it when the card shipped. It serves the Anthropic Messages API natively, so anything that speaks that protocol — including Claude Code, via `claude --local` — points at it directly.'
+    'The host is a System76 Thelio Mira running Bazzite, with an RTX 5090 (32 GB of VRAM), a 16-core Ryzen 9 9950X and 123 GiB of RAM. All inference runs on this machine.',
+    'The engine is one llama.cpp build compiled from a pinned commit with sm_120 (Blackwell) support, which the packaged builds did not have when the card came out. It serves the Anthropic Messages API, so Claude Code can use a local model directly through `claude --local`.'
   ],
 
   switching:
-    'The four backends are mutually exclusive — only one is resident in VRAM at a time. `ai use <model>` polls nvidia-smi until the VRAM is actually freed before loading the next, so there are no half-loads and no out-of-memory crashes.',
+    'Only one of the four backends fits in VRAM at a time. `ai use <model>` stops the running backend, waits until nvidia-smi reports the memory as free, and then starts the next one. A switch therefore never fails halfway through loading.',
 
   /**
    * Measured on the machine itself (median, sustained load).
@@ -85,33 +86,33 @@ export const STACK = {
       architecture: 'MoE 35B · 3B active',
       context: '262,144',
       speed: '282 tok/s',
-      note: 'Interactive default — fastest of the four by a wide margin'
+      note: 'The default for interactive use, and the fastest of the four'
     },
     {
       name: 'qwen3.8-27b',
       architecture: 'Dense 27B · hybrid attention',
       context: '163,840',
       speed: '113 tok/s',
-      note: 'Dense workhorse'
+      note: 'Dense model, used for quality at long context'
     },
     {
       name: 'muse-glimmer-30b',
       architecture: 'Dense 30B · f16 KV cache',
       context: '131,072',
-      speed: '84 tok/s',
-      note: 'Most VRAM headroom of the four'
+      speed: '83 tok/s',
+      note: 'Uses 21 GB of VRAM, leaving about 11 GB free'
     },
     {
       name: 'qwen3.8-flash-next',
       architecture: 'MoE 180B · experts in system RAM',
       context: '262,144',
       speed: '27 tok/s',
-      note: 'Largest of the four; ~80 GiB RAM resident'
+      note: 'The largest; keeps about 80 GiB of its experts in system RAM'
     }
   ] satisfies readonly ModelRow[],
 
   alwaysOn:
-    'Running around the engine at all times: Open WebUI for chat, SearXNG for local search, Docling for document parsing (CPU-only, on purpose), Tika for extraction, and MCPO for model context over the web. Every endpoint is loopback-only with bearer auth — nothing on the stack is exposed to the network.'
+    'Five services run beside the engine: Open WebUI for chat, SearXNG for web search, Docling for document parsing (on the CPU, to keep the GPU free), Tika for text extraction and MCPO for MCP tools over HTTP. Each one listens only on the loopback interface and requires a bearer token.'
 };
 
 /**
@@ -137,18 +138,18 @@ export const TERMINAL_PROMPT = 'joshua@t-c:~$';
 export const TERMINAL: Record<'hero' | 'about' | 'contact', readonly TerminalLine[]> = {
   hero: [
     { prompt: TERMINAL_PROMPT, text: 'cat /etc/whoami' },
-    { text: 'Joshua T-C' },
+    { text: SITE_META.name },
     { prompt: TERMINAL_PROMPT, text: 'cat /etc/pronouns' },
-    { text: 'any / all' },
+    { text: SITE_META.pronouns },
     { prompt: TERMINAL_PROMPT, text: 'echo $STATUS' },
-    { text: 'metaphysical exile' }
+    { text: SITE_META.status }
   ],
   about: [
     { prompt: TERMINAL_PROMPT, text: 'cat about.md' },
     { text: 'CS student, Colorado School of Mines' },
-    { text: 'Builds: homelab, community infra,' },
-    { text: 'k8s, zero-trust auth, LLM agents' },
-    { text: 'Runs four LLMs on one local GPU.' }
+    { text: 'Runs a homelab and the servers' },
+    { text: 'for Minecraft at Mines (600+).' },
+    { text: 'Four LLMs on one RTX 5090.' }
   ],
   contact: [
     { prompt: TERMINAL_PROMPT, text: 'contact --help' },

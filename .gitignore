@@ -48,3 +48,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# raw Blender bake output (packed GLBs live in public/assets/room)
+art/out/
+__pycache__/

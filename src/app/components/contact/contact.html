@@ -1,20 +1,14 @@
-<section id="contact" class="section section--panel" aria-labelledby="contact-title">
-  <div class="section-inner">
-    <p class="section-kicker" appReveal>contact --help</p>
-    <h2 id="contact-title" class="section-title" appReveal>Contact</h2>
-    <p class="contact-line" appReveal>
-      I don't publish an email address.
-      <a href="https://github.com/JoshT-C" rel="noopener">GitHub</a> is where
-      I read messages.
-    </p>
-    <div class="prose" style="margin-top: var(--sp-4); margin-bottom: 0" appReveal>
-      <p>
-        Issues, discussions, or a fork with a fix in it — all of them welcome.
-        The profile has the full history of what I build.
-      </p>
-    </div>
-    <div class="contact-links" appReveal>
-      <a class="btn btn--primary" href="https://github.com/JoshT-C" rel="noopener">github.com/JoshT-C ↗</a>
-    </div>
+<section id="contact" class="tty" aria-labelledby="contact-title">
+  <div class="tty__inner">
+    <h2 id="contact-title" class="visually-hidden">Contact</h2>
+
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> finger joshua</p>
+    <dl class="tty__out tty__kv">
+      <div><dt>email</dt><dd>not published</dd></div>
+      <div><dt>github</dt><dd><a class="tty__link" href="https://github.com/JoshT-C" rel="noopener">github.com/JoshT-C</a></dd></div>
+      <div><dt>plan</dt><dd>To reach me, open an issue or a discussion on any of my repositories.</dd></div>
+    </dl>
+
+    <p class="tty__cmd tty__last"><span class="tty__ps1">{{ prompt }}</span> <span class="tty__cursor" aria-hidden="true"></span></p>
   </div>
 </section>

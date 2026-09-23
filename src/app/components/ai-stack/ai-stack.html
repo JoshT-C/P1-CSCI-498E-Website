@@ -1,63 +1,35 @@
-<section id="stack" class="section section--panel" aria-labelledby="stack-title">
-  <div class="section-inner">
-    <p class="section-kicker" appReveal>ai list</p>
-    <h2 id="stack-title" class="section-title" appReveal>
-      One machine, one engine, four backends
-    </h2>
-    <p class="stack-spec" appReveal>
-      <span>RTX 5090 · 32 GB VRAM</span>
-      <span>Ryzen 9 9950X · 16c/32t</span>
-      <span>123 GiB RAM</span>
-      <span>PCIe 5.0 x16</span>
-    </p>
+<section id="stack" class="tty" aria-labelledby="stack-title">
+  <div class="tty__inner">
+    <h2 id="stack-title" class="visually-hidden">AI stack</h2>
 
-    <div class="prose" style="margin-bottom: var(--sp-5)" appReveal>
-      @for (paragraph of STACK.intro; track $index) {
-        <p>{{ paragraph }}</p>
-      }
-    </div>
-
-    <!-- CSS fallback for the 3D "one engine, four backends" visual.
-         Decorative: the table below carries the same state. -->
-    <div class="stack-bars" aria-hidden="true">
-      @for (model of STACK.models; track model.name; let i = $index) {
-        <span class="bar" [attr.data-active]="i === activeModel() ? '' : null"></span>
-      }
-    </div>
-
-    <table class="model-table" appReveal>
-      <caption>Backends — measured on the machine</caption>
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> ssh thelio ai status</p>
+    <p class="tty__out tty__dim">host thelio: {{ STACK.machine }}</p>
+    <table class="tty__table">
+      <caption class="visually-hidden">Model backends on the Thelio. Speeds are medians of repeated runs; context is the configured window.</caption>
       <thead>
-        <tr>
-          <th scope="col">Model</th>
-          <th scope="col">Architecture</th>
-          <th scope="col">Context</th>
-          <th scope="col">Speed</th>
-        </tr>
+        <tr><th scope="col">backend</th><th scope="col">shape</th><th scope="col">context</th><th scope="col">decode</th><th scope="col">state</th></tr>
       </thead>
       <tbody>
         @for (model of STACK.models; track model.name; let i = $index) {
-          <tr [attr.aria-current]="i === activeModel() ? 'true' : null" [attr.model-index]="i">
-            <td>
-              <div>{{ model.name }}</div>
-              <div class="mono">{{ model.note }}</div>
-            </td>
+          <tr [class.tty__on]="i === loaded" [attr.aria-current]="i === loaded ? 'true' : null">
+            <th scope="row">{{ model.name }}</th>
             <td>{{ model.architecture }}</td>
-            <td class="mono">{{ model.context }}</td>
-            <td class="mono">{{ model.speed }}</td>
+            <td>{{ model.context }}</td>
+            <td>{{ model.speed }}</td>
+            <td>{{ i === loaded ? 'loaded' : 'idle' }}</td>
           </tr>
+          <tr class="tty__desc"><td colspan="5">{{ model.note }}</td></tr>
         }
       </tbody>
     </table>
-    <p class="model-note">Speeds are measured medians under sustained load; context is the configured window.</p>
 
-    <div class="prose" appReveal>
+    <p class="tty__cmd"><span class="tty__ps1">{{ prompt }}</span> cat ~joshua/ai-stack/NOTES</p>
+    <div class="tty__out tty__prose">
+      @for (paragraph of STACK.intro; track $index) {
+        <p>{{ paragraph }}</p>
+      }
       <p>{{ STACK.switching }}</p>
       <p>{{ STACK.alwaysOn }}</p>
     </div>
-
-    <p class="pull-line" appReveal>
-      echo "$DEFAULT_BACKEND" <span class="dim">→ qwen3.6-35b-a3b</span>
-    </p>
   </div>
 </section>

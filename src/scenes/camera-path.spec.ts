@@ -1,12 +1,16 @@
 import {
-  CLOSE,
-  CRT,
-  SCREEN_CENTER,
-  WIDE,
-  cameraPose,
+  DESK_VIEW,
+  ESTABLISH,
+  PORTAL,
+  PORTAL_AT,
+  SCREEN_VIEW,
+  STATION_POSES,
+  blendPose,
+  spinePose,
   type CameraPose,
   type Vec3
 } from './camera-path';
+import { ROOM_MAX, ROOM_MIN, SCREEN_CENTER, STATIONS } from './room/layout';
 
 const dist = (a: Vec3, b: Vec3): number =>
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
@@ -21,72 +25,86 @@ function assertFinite(pose: CameraPose): void {
   expect(Number.isFinite(pose.fov)).toBe(true);
 }
 
+/** Compares two poses coordinate by coordinate (blendPose builds fresh objects). */
+function expectPoseNear(actual: CameraPose, expected: CameraPose): void {
+  for (const [a, b] of [
+    [actual.position, expected.position],
+    [actual.target, expected.target]
+  ] as const) {
+    expect(a.x).toBeCloseTo(b.x);
+    expect(a.y).toBeCloseTo(b.y);
+    expect(a.z).toBeCloseTo(b.z);
+  }
+  expect(actual.fov).toBeCloseTo(expected.fov);
+}
+
 describe('camera-path', () => {
   it('returns the exact endpoint poses at p = 0 and p = 1', () => {
-    expect(cameraPose(0)).toBe(WIDE);
-    expect(cameraPose(1)).toBe(CLOSE);
+    expect(spinePose(0)).toBe(ESTABLISH);
+    expect(spinePose(1)).toBe(PORTAL);
   });
 
-  it('clamps out-of-range values to the endpoints', () => {
-    expect(cameraPose(-5)).toBe(WIDE);
-    expect(cameraPose(17)).toBe(CLOSE);
-  });
-
-  it('never emits a NaN, even for non-finite input', () => {
-    for (const p of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
-      assertFinite(cameraPose(p));
+  it('clamps NaN, ±Infinity, and negatives to the endpoints without ever producing a NaN', () => {
+    for (const p of [
+      Number.NaN,
+      Number.NEGATIVE_INFINITY,
+      Number.POSITIVE_INFINITY,
+      -5
+    ]) {
+      assertFinite(spinePose(p));
     }
-    // -Infinity clamps to the wide shot, +Infinity to the close-up
-    expect(cameraPose(Number.NEGATIVE_INFINITY)).toBe(WIDE);
-    expect(cameraPose(Number.POSITIVE_INFINITY)).toBe(CLOSE);
+    expect(spinePose(Number.NaN)).toBe(ESTABLISH); // NaN clamps to 0
+    expect(spinePose(-5)).toBe(ESTABLISH);
+    expect(spinePose(Number.NEGATIVE_INFINITY)).toBe(ESTABLISH);
+    expect(spinePose(Number.POSITIVE_INFINITY)).toBe(PORTAL);
   });
 
-  it('is monotonic in z and fov, and never NaN, over 1001 samples', () => {
-    let prevZ = Number.POSITIVE_INFINITY;
-    let prevFov = Number.POSITIVE_INFINITY;
-    for (let i = 0; i <= 1000; i++) {
-      const pose = cameraPose(i / 1000);
+  it('passes exactly through DESK_VIEW and SCREEN_VIEW at their key fractions', () => {
+    expectPoseNear(spinePose(0.42), DESK_VIEW);
+    expectPoseNear(spinePose(0.8), SCREEN_VIEW);
+  });
+
+  it('closes in on the screen monotonically from the desk to the portal', () => {
+    let prev = dist(spinePose(0.42).position, SCREEN_CENTER);
+    for (let i = 1; i <= 12; i++) {
+      const p = Math.min(0.42 + i * 0.05, 1); // 0.47, 0.52, …, 0.97, 1
+      const pose = spinePose(p);
       assertFinite(pose);
-      // the camera approaches along the z axis: z and fov only decrease
-      expect(pose.position.z).toBeLessThanOrEqual(prevZ);
-      expect(pose.fov).toBeLessThanOrEqual(prevFov);
-      // and it never crosses the screen plane
-      expect(pose.position.z).toBeGreaterThan(SCREEN_CENTER.z);
-      prevZ = pose.position.z;
-      prevFov = pose.fov;
-    }
-    // …and it actually moved, not just stayed put
-    expect(cameraPose(0.5).position.z).toBeLessThan(cameraPose(0).position.z);
-  });
-
-  it('bows outward, then dives in without wobble', () => {
-    // the bow pushes the camera past its starting x before the dive
-    expect(cameraPose(0.05).position.x).toBeGreaterThan(WIDE.position.x);
-    // midpoint is well outside a pure lerp (which would give x = 0.85)
-    expect(cameraPose(0.5).position.x).toBeGreaterThan(0.85);
-    // after the bow, x decreases monotonically all the way to the close-up
-    let prevX = Number.POSITIVE_INFINITY;
-    for (let i = 150; i <= 1000; i++) {
-      const x = cameraPose(i / 1000).position.x;
-      expect(x).toBeLessThanOrEqual(prevX);
-      prevX = x;
+      const d = dist(pose.position, SCREEN_CENTER);
+      expect(d).toBeLessThan(prev);
+      prev = d;
     }
   });
 
-  it('frames the whole machine wide and the screen close', () => {
-    // Wide: the chassis top and the floor are both inside the vertical fov.
-    const wideDist = dist(WIDE.position, WIDE.target);
-    const halfHeight = wideDist * Math.tan((WIDE.fov * Math.PI) / 360);
-    const machineTop = CRT.standHeight + CRT.height;
-    expect(halfHeight).toBeGreaterThan(machineTop - WIDE.target.y);
-    expect(halfHeight).toBeGreaterThan(WIDE.target.y); // floor at y = 0
+  it('keeps the fov within [25, 60] everywhere', () => {
+    for (let i = 0; i <= 1000; i++) {
+      const fov = spinePose(i / 1000).fov;
+      expect(fov).toBeGreaterThanOrEqual(25);
+      expect(fov).toBeLessThanOrEqual(60);
+    }
+  });
 
-    // Close: at a 16:9 aspect the visible rectangle covers the screen with
-    // margin on both axes.
-    const closeDist = dist(CLOSE.position, CLOSE.target);
-    const vHalf = closeDist * Math.tan((CLOSE.fov * Math.PI) / 360);
-    const hHalf = vHalf * (16 / 9);
-    expect(vHalf).toBeGreaterThan(CRT.screen.height / 2);
-    expect(hHalf).toBeGreaterThan(CRT.screen.width / 2);
+  it('keeps every station pose finite and inside the room', () => {
+    for (const id of STATIONS) {
+      const pose = STATION_POSES[id];
+      assertFinite(pose);
+      const { position } = pose;
+      expect(position.x, `${id} x`).toBeGreaterThanOrEqual(ROOM_MIN.x);
+      expect(position.x, `${id} x`).toBeLessThanOrEqual(ROOM_MAX.x);
+      expect(position.y, `${id} y`).toBeGreaterThanOrEqual(ROOM_MIN.y);
+      expect(position.y, `${id} y`).toBeLessThanOrEqual(ROOM_MAX.y);
+      expect(position.z, `${id} z`).toBeGreaterThanOrEqual(ROOM_MIN.z);
+      expect(position.z, `${id} z`).toBeLessThanOrEqual(ROOM_MAX.z);
+    }
+  });
+
+  it('blendPose returns its endpoints at t = 0 and t = 1', () => {
+    expectPoseNear(blendPose(ESTABLISH, PORTAL, 0), ESTABLISH);
+    expectPoseNear(blendPose(ESTABLISH, PORTAL, 1), PORTAL);
+  });
+
+  it('hands over to the DOM between the screen view and the portal', () => {
+    expect(PORTAL_AT).toBeGreaterThan(0.8);
+    expect(PORTAL_AT).toBeLessThan(1);
   });
 });

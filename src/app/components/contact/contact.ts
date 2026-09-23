@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
-import { RevealDirective } from '../../directives/reveal.directive';
+import { SESSION_PROMPT } from '../../services/content/site';
 
 @Component({
   selector: 'app-contact',
-  imports: [RevealDirective],
   templateUrl: './contact.html'
 })
-export class ContactComponent {}
+export class ContactComponent {
+  readonly prompt = SESSION_PROMPT;
+}
