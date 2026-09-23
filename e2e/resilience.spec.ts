@@ -33,7 +33,7 @@ test.describe('GitHub API', () => {
   });
 
   test('no network to GitHub says so', async ({ site, page, guard }) => {
-    guard.allow(/request failed: https:\/\/api\.github\.com|NetworkError|Failed to load resource|Cross-Origin Request Blocked/i);
+    guard.allow(/request failed: https:\/\/api\.github\.com|NetworkError|Failed to load resource|Cross-Origin Request Blocked|Web Inspector blocked/i);
     await page.route('https://api.github.com/**', route => route.abort('internetdisconnected'));
     await site.open({ tier: 'css' });
     await site.enterShell();

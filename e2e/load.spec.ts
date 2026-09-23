@@ -29,7 +29,10 @@ test.describe('first load', () => {
       const sample = (): void => {
         const shell = document.getElementById('shell');
         const root = document.documentElement;
-        if (shell && root.dataset['render'] === '3d' && root.dataset['portal'] !== 'in') {
+        // before the stylesheet has loaded nothing is painted (it is render-
+        // blocking), though scripts and frames already run: not a flash
+        const styled = [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(l => !!l.sheet);
+        if (styled && shell && root.dataset['render'] === '3d' && root.dataset['portal'] !== 'in') {
           const cs = getComputedStyle(shell);
           const box = shell.getBoundingClientRect();
           if (cs.visibility === 'visible' && cs.opacity !== '0' && box.top < innerHeight && box.bottom > 0) {
@@ -76,6 +79,9 @@ test.describe('first load', () => {
 
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
+  // Chromium, with scripts off, refuses the page's module preloads as a
+  // CSP matter: its policy, not the site's
+  test.beforeEach(({ guard }) => guard.allow(/request failed: .*\.js \(csp\)/));
 
   test('the server-rendered page carries every section, the name and the email', async ({ page }) => {
     await page.goto('/');

@@ -24,8 +24,9 @@ test.describe('stations (3D)', () => {
       expect((await site.state()).station).toBe(id);
       await page.keyboard.press('Escape');
       await expect(panel).toBeHidden();
-      expect((await site.state()).station).toBeNull();
-      expect(new URL(page.url()).hash).toBe('');
+      // Chromium fires the dialog's close event a task after it hides
+      await expect.poll(async () => (await site.state()).station).toBeNull();
+      await expect.poll(() => new URL(page.url()).hash).toBe('');
     });
   }
 
@@ -56,6 +57,7 @@ test.describe('stations (3D)', () => {
 
   test('the disk buttons are laid out as the shelf: back row first', async ({ page }) => {
     await page.locator('.station-link', { hasText: 'floppies' }).click();
+    await expect(page.locator('.floppy-chip')).toHaveCount(6);
     const chips = (await page.locator('.floppy-chip').allTextContents()).map(t => t.trim());
     expect(chips).toEqual(['bench', 'laptop-stack', 'previous-site', 'ai-stack', 'claude-local', 'delegation']);
   });

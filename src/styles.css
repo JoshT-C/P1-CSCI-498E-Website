@@ -1529,9 +1529,16 @@ html.js .term__screen.is-typing {
   display: flex;
   flex-direction: column;
   padding: 0;
+  /* nothing inside may reach past the shell: it ends the page, and in
+     Chromium any overflow here lengthened the page into black */
+  overflow: clip;
 }
 
+/* position: the log is the containing block for its absolutely placed
+   descendants (the tables' visually-hidden captions), so its scrolling
+   clips them; anchored to the shell they hung below it */
 .shell__log {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;

@@ -127,6 +127,31 @@ test.describe('orders of events', () => {
     expect(await stop()).toEqual([]);
   });
 
+  test('no order of commands lengthens the page past the shell', async ({ site, page }) => {
+    // the tables' hidden captions once hung below the shell, and Chromium
+    // let the page scroll down into black by that much
+    await openRoom(site);
+    await site.enterShell();
+    const end = async () => page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+    const before = await end();
+    for (const order of [
+      ['about', 'projects'],
+      ['ai-stack', 'contact', 'projects', 'whoami'],
+      ['projects', 'ai-stack', 'projects', 'about', 'ai-stack']
+    ]) {
+      for (const command of order) await site.run(command);
+      await page.locator('.site-nav a[href="#work"]').click();
+      await expect.poll(async () => (await site.state()).commands.at(-1)).toBe('projects');
+      await page.waitForTimeout(400);
+      expect(await end(), order.join(' → ')).toBe(before);
+    }
+    await page.mouse.move(700, 500);
+    await page.mouse.wheel(0, 2000);
+    await page.waitForTimeout(400);
+    const bottom = await page.evaluate(() => Math.round(document.getElementById('shell')!.getBoundingClientRect().bottom));
+    expect(bottom).toBe(page.viewportSize()!.height);
+  });
+
   test('a resize in the shell keeps the page at the shell', async ({ site, page }) => {
     await openRoom(site);
     await site.enterShell();

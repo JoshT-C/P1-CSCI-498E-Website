@@ -168,8 +168,26 @@ export class Site {
   }
 }
 
-export const test = base.extend<{ site: Site; guard: Guard; boot: boolean; githubMock: void }>({
+export const test = base.extend<{ site: Site; guard: Guard; boot: boolean; webgl: boolean; githubMock: void; noWebgl: void }>({
   boot: [false, { option: true }],
+  /** false: the page cannot create a WebGL context (the no-WebGL projects). */
+  webgl: [true, { option: true }],
+
+  noWebgl: [
+    async ({ page, webgl }, use) => {
+      if (!webgl) {
+        await page.addInitScript(() => {
+          const original = HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
+            if (/webgl/i.test(type)) return null;
+            return (original as (...a: unknown[]) => unknown).call(this, type, ...rest);
+          } as typeof HTMLCanvasElement.prototype.getContext;
+        });
+      }
+      await use();
+    },
+    { auto: true }
+  ],
 
   guard: [
     async ({ page }, use, testInfo) => {
@@ -199,6 +217,14 @@ export const test = base.extend<{ site: Site; guard: Guard; boot: boolean; githu
         .evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? [])
         .catch(() => [] as string[]);
       for (const line of csp) note(line);
+      // A browser with no WebGL here (Firefox in a GPU-less container) says
+      // so itself when the page probes for it; the page then steps down, as
+      // designed. Those lines are the environment's, and only then excused.
+      const reason = await page.evaluate(() => document.documentElement.dataset['tierReason'] ?? '').catch(() => '');
+      if (reason === 'no-webgl' || reason === 'webgl-fail') {
+        const env = /WebGL|THREE\.WebGLRenderer/;
+        for (let i = seen.length - 1; i >= 0; i--) if (env.test(seen[i])) seen.splice(i, 1);
+      }
       if (seen.length && testInfo.status === testInfo.expectedStatus) {
         expect(seen, 'the console, CSP and network must stay clean').toEqual([]);
       }

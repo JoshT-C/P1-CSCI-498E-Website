@@ -90,8 +90,13 @@ export class ShellComponent {
     return Object.keys(SECTION_COMMAND).find(k => SECTION_COMMAND[k] === command) ?? null;
   }
 
+  /** A click in `help`: the prompt takes the name and the keyboard at
+   *  once, in the DOM as well as the state, so an Enter pressed straight
+   *  after runs it (waiting a render let a fast Enter hit the button). */
   fill(name: string): void {
     this.shell.fill(name);
+    this.field().nativeElement.value = name;
+    this.focus();
   }
 
   submit(event: Event): void {
@@ -173,8 +178,13 @@ export class ShellComponent {
       if (document.querySelector('.boot')) return; // the key skips the login instead
       const t = e.target as Element | null;
       if (t?.closest('input, textarea, select, [contenteditable="true"], dialog')) return;
+      // the key goes into the input itself, not only the state: the next
+      // key arrives natively before a render would write the state back,
+      // and Chromium lost the first character that way
       e.preventDefault();
-      this.shell.input.update(v => v + e.key);
+      const el = this.field().nativeElement;
+      el.value += e.key;
+      this.shell.input.set(el.value);
       this.focus();
     };
     document.addEventListener('keydown', onKeydown);

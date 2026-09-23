@@ -170,7 +170,8 @@ test.describe('shell through the glass (3D)', () => {
     expect((await site.state()).focused).not.toBe('shell-input');
   });
 
-  test('scrolling up from the top of the log leaves the glass', async ({ site, page }) => {
+  test('scrolling up from the top of the log leaves the glass', async ({ site, page, browserName }) => {
+    test.skip(browserName === 'webkit', "Playwright's Linux WebKit does not scroll the page on synthetic wheel events at all");
     await site.open({ tier: 'room' });
     await site.require3d();
     await site.enterShell();
