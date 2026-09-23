@@ -57,7 +57,7 @@ export const NODES: readonly HomelabNode[] = [
     chassis: null,
     cpu: 'Core i9-13900HX · 32 threads',
     gpu: 'RTX 4080 Laptop · 12 GB',
-    memory: '47 GiB',
+    memory: '64 GB · 48 GB to WSL2',
     role: 'Second inference machine. Runs Qwen3.6-35B-A3B under WSL2 as a local coding worker.',
     tape: 'laptop · rtx 4080'
   }

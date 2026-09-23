@@ -49,7 +49,7 @@
           }
         </tbody>
       </table>
-      <p class="tty__out tty__dim">{{ grid().projects.length }} repositories. All of them: <a class="tty__link" [href]="'https://github.com/' + username" rel="noopener">github.com/{{ username }}</a></p>
+      <p class="tty__out tty__dim">{{ grid().projects.length }} {{ grid().projects.length === 1 ? 'repository' : 'repositories' }}. All of them: <a class="tty__link" [href]="'https://github.com/' + username" rel="noopener">github.com/{{ username }}</a></p>
     }
   </div>
 </section>

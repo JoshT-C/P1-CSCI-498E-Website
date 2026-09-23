@@ -1,5 +1,5 @@
 import { Component, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, ViewportScroller } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -20,6 +20,13 @@ export class AppComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   constructor() {
+    // The router scrolls hash links itself, ignoring CSS scroll-margin:
+    // give it the fixed header's height so a section's first line is not
+    // left under the header.
+    if (this.isBrowser) {
+      inject(ViewportScroller).setOffset(() => [0, document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0]);
+    }
+
     // A client-side route change moves focus to the page — the same courtesy
     // a link click already gives the keyboard user.
     this.router.events.pipe(

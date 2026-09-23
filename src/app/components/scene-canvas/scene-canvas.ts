@@ -58,7 +58,7 @@ export class SceneCanvasComponent {
     this.handle?.dispose();
     this.handle = null;
     this.built = 'css';
-    this.sync.setPortal(false);
+    this.sync.setPortal(null);
     this.sync.setHover(null);
   }
 

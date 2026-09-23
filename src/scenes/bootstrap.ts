@@ -281,6 +281,8 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   cur.target.set(initial.target.x, initial.target.y, initial.target.z);
 
   let portalInside = false;
+  // the first frame always reports, so the page learns 'out' as well
+  let portalReported = false;
   let lastFov = -1;
   let lastOffset = -1;
 
@@ -342,8 +344,9 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     spineP = Math.min(Math.max((window.scrollY - introTop) / introRun, 0), 1);
 
     const inside = state.station === null && spineP >= PORTAL_AT;
-    if (inside !== portalInside) {
+    if (inside !== portalInside || !portalReported) {
       portalInside = inside;
+      portalReported = true;
       onPortal(inside);
     }
 

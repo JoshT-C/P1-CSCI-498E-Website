@@ -68,10 +68,16 @@ export class SceneSyncService {
     this.hover.set(target);
   }
 
-  setPortal(inside: boolean): void {
-    if (this.portal() === inside) return;
-    this.portal.set(inside);
-    this.document.documentElement.dataset['portal'] = inside ? 'in' : 'out';
+  /** Where the running scene's camera is: through the glass (true), in
+   *  the room (false), or null when no scene is running. `data-portal` is
+   *  only set while a scene runs, because the stylesheet hides the session
+   *  on 'out': without a scene nothing would ever show it again. */
+  setPortal(inside: boolean | null): void {
+    this.portal.set(inside === true);
+    if (!this.isBrowser) return;
+    const root = this.document.documentElement;
+    if (inside === null) delete root.dataset['portal'];
+    else root.dataset['portal'] = inside ? 'in' : 'out';
   }
 
   /** Open a station panel. The terminal is not a panel: it means "go in",

@@ -73,6 +73,9 @@
 
   /* intro scroll run: doorway → desk → through the glass */
   --intro-run: 420vh;
+  /* spine fraction where the room hands over to the session; keep equal
+     to PORTAL_AT in src/scenes/camera-path.ts */
+  --portal-at: 0.94;
 
   color-scheme: dark;
 }
@@ -363,6 +366,26 @@ a:hover {
 
 :root[data-render='3d'] .intro {
   height: var(--intro-run);
+  /* The session overlaps the end of the dive, so it is already in place
+     when the room hands over at --portal-at: its first section's top then
+     sits 16px under the header. Without the overlap it only rose from the
+     bottom of the screen after the dive, and a slow scroll crossed a
+     stretch of black. The 16px also puts a jump to #work (which stops at
+     the header) just past the hand-over, so the session shows there too. */
+  margin-bottom: calc(
+    -1 * (100svh + (1 - var(--portal-at)) * (var(--intro-run) - 100svh) - var(--header-h) - 16px)
+  );
+}
+
+/* Until the hand-over the session is laid out but not shown: it lies
+   over the last part of the dive. */
+:root[data-render='3d'] .tty {
+  transition: opacity 450ms ease;
+}
+
+:root[data-render='3d'][data-portal='out'] .tty {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* the desk tier starts closer, so the walk is shorter */
