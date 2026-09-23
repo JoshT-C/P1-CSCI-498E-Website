@@ -108,9 +108,9 @@ export const ANCHORS = {
     "position": [
       -1.48,
       0.355,
-      -0.9
+      -1.26
     ],
-    "width": 0.84
+    "width": 1.06
   },
   "room_max": {
     "position": [

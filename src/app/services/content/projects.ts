@@ -13,8 +13,7 @@ export const GITHUB_USERNAME = 'JoshT-C';
 /** Repos that must never appear in the runtime GitHub grid. */
 export const HIDDEN_REPOS: ReadonlySet<string> = new Set([
   'P1-CSCI-498E-Website', // this class project
-  'joshua_t-c.github.io', // the previous site — shown as a curated card instead
-  'joshua_t-c.github.io.dev'
+  'JoshT-C.github.io' // the previous site — shown as a curated card instead
 ]);
 
 /** How many GitHub repos the grid shows, most recently updated first. */
@@ -49,9 +48,9 @@ export const CURATED_PROJECTS: readonly CuratedProject[] = [
     id: 'previous-site',
     title: 'Previous site',
     tagline: 'The GitHub Pages version this site replaces.',
-    body: 'My first personal site, built with Angular and hosted on GitHub Pages. It stays online at joshua_t-c.github.io for comparison.',
-    href: 'https://joshua_t-c.github.io',
-    hrefLabel: 'joshua_t-c.github.io',
+    body: 'My first personal site, built with Angular and hosted on GitHub Pages. It stays online at josht-c.github.io for comparison.',
+    href: 'https://josht-c.github.io/projects',
+    hrefLabel: 'josht-c.github.io/projects',
     tags: ['Angular', 'GitHub Pages']
   }
 ];
@@ -148,12 +147,12 @@ export const TERMINAL: Record<'hero' | 'about' | 'contact', readonly TerminalLin
     { prompt: TERMINAL_PROMPT, text: 'cat about.md' },
     { text: 'CS student, Colorado School of Mines' },
     { text: 'Runs a homelab and the servers' },
-    { text: 'for Minecraft at Mines (600+).' },
+    { text: 'for Minecraft at Mines (700+).' },
     { text: 'Four LLMs on one RTX 5090.' }
   ],
   contact: [
     { prompt: TERMINAL_PROMPT, text: 'contact --help' },
-    { text: 'No email published.' },
+    { text: 'joshua_t-c@outlook.com' },
     { text: 'github.com/JoshT-C' }
   ]
 };

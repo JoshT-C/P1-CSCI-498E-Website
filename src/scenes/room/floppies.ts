@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import { Bag, hitbox, merge, type Part } from './kit';
 import { anchor } from './layout';
 import { canvas2d } from './textures';
+import { FLOPPY_PER_ROW, FLOPPY_STRIPES } from '../../app/config/scene.config';
 
 export interface FloppyData {
   readonly id: string;
@@ -28,11 +29,11 @@ export interface Floppies extends Part {
 const DISK = { w: 0.09, h: 0.094, t: 0.0033 };
 /** Paper label on the upper face, as on a real disk. */
 const LABEL = { w: 0.068, h: 0.034, y: DISK.h * 0.22 };
-const PER_ROW = 3;
+const PER_ROW = FLOPPY_PER_ROW;
 const PITCH = 0.1;
 const LEAN = 0.2;
 const BODY_COLORS = [0x1c1c1e, 0x2d3a4a, 0x55585a, 0xc9bfa6, 0x5a2a26, 0x23302a];
-const STRIPES = ['#c0392b', '#2e86c1', '#27ae60', '#d4a017', '#8e44ad', '#16a085'];
+const STRIPES = FLOPPY_STRIPES;
 /** Light level in the cubby, read off the bake (dim, screen-lit). */
 const SHADE = new THREE.Color(0.34, 0.36, 0.42);
 

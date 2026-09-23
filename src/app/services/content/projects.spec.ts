@@ -52,8 +52,7 @@ describe('content/projects', () => {
 
     it('hides the class project and the previous-site repos', () => {
       expect(HIDDEN_REPOS.has('P1-CSCI-498E-Website')).toBe(true);
-      expect(HIDDEN_REPOS.has('joshua_t-c.github.io')).toBe(true);
-      expect(HIDDEN_REPOS.has('joshua_t-c.github.io.dev')).toBe(true);
+      expect(HIDDEN_REPOS.has('JoshT-C.github.io')).toBe(true);
     });
 
     it('bounds the grid', () => {

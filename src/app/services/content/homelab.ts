@@ -95,6 +95,9 @@ export interface DiagramEdge {
   readonly to: string;
   readonly label?: string;
   readonly dashed?: boolean;
+  /** Route up/down from `from` to the height of `to`, then across into its
+   *  side, instead of straight, so the edge clears the boxes between. */
+  readonly elbow?: boolean;
 }
 
 export interface Diagram {
@@ -109,9 +112,9 @@ export const DIAGRAMS: readonly Diagram[] = [
   {
     title: 'ai-stack: loopback only',
     nodes: [
-      { id: 'webui', label: 'open-webui', x: 0.12, y: 0.06 },
+      { id: 'webui', label: 'open-webui', x: 0.14, y: 0.06 },
       { id: 'cc', label: 'claude --local', x: 0.5, y: 0.06 },
-      { id: 'oc', label: 'opencode', x: 0.88, y: 0.06 },
+      { id: 'oc', label: 'opencode', x: 0.86, y: 0.06 },
       { id: 'lo', label: 'loopback + bearer', x: 0.5, y: 0.38, ink: 'black' },
       { id: 'engine', label: 'llama.cpp (1 of 4)', x: 0.5, y: 0.66, ink: 'green' },
       { id: 'gpu', label: 'rtx 5090 · 32 GB', x: 0.5, y: 0.94, ink: 'red' }
@@ -127,18 +130,18 @@ export const DIAGRAMS: readonly Diagram[] = [
   {
     title: 'delegation: one slot',
     nodes: [
-      { id: 'orch', label: 'cloud orchestrator', x: 0.5, y: 0.06, ink: 'black' },
-      { id: 'slot', label: 'ai-delegate (lock)', x: 0.5, y: 0.36, ink: 'red' },
-      { id: 'worker', label: 'local qwen worker', x: 0.5, y: 0.66, ink: 'green' },
-      { id: 'diff', label: 'git diff', x: 0.18, y: 0.94 },
-      { id: 'checks', label: 'build + tests', x: 0.82, y: 0.94 }
+      { id: 'orch', label: 'cloud orchestrator', x: 0.36, y: 0.06, ink: 'black' },
+      { id: 'slot', label: 'ai-delegate (lock)', x: 0.36, y: 0.36, ink: 'red' },
+      { id: 'worker', label: 'local qwen worker', x: 0.36, y: 0.66, ink: 'green' },
+      { id: 'diff', label: 'git diff', x: 0.14, y: 0.94 },
+      { id: 'checks', label: 'build + tests', x: 0.84, y: 0.94 }
     ],
     edges: [
       { from: 'orch', to: 'slot', label: 'spec' },
       { from: 'slot', to: 'worker', label: 'read/edit only' },
       { from: 'worker', to: 'diff' },
       { from: 'diff', to: 'checks' },
-      { from: 'checks', to: 'orch', label: 'review', dashed: true }
+      { from: 'checks', to: 'orch', label: 'review', dashed: true, elbow: true }
     ]
   }
 ];
@@ -200,7 +203,7 @@ export const FLOPPIES: readonly Floppy[] = [
     label: 'laptop-stack',
     title: 'The laptop stack',
     body: 'The same setup on an RTX 4080 Laptop GPU with 12 GB: Qwen3.6-35B-A3B under WSL2, with the expert layers held in system RAM. It decodes about 42 tokens per second across two slots with a 131,072-token context each, and solved 162 of 164 HumanEval problems with greedy decoding.',
-    notes: ['RTX 4080 Laptop, 12 GB', '~42 tok/s over 2 slots', 'HumanEval 162/164'],
+    notes: ['Qwen3.6-35B-A3B, WSL2', '~42 tok/s over 2 slots', 'HumanEval 162/164'],
     tags: ['RTX 4080 Laptop', 'WSL2'],
     href: null,
     hrefLabel: null

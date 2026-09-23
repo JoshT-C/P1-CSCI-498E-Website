@@ -144,7 +144,11 @@ export async function loadRoom(tier: Tier, screenSource: THREE.Texture, signal: 
     } else if (name.startsWith('tape_')) {
       orientUp(mesh);
       const text = String(mesh.userData['label'] ?? '');
-      const tex = canvasTexture(paintLabel(text), bag);
+      // print at the tape's own proportions: its two in-plane extents
+      mesh.geometry.computeBoundingBox();
+      const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
+      const [long, short] = [size.x, size.y, size.z].sort((a, b) => b - a);
+      const tex = canvasTexture(paintLabel(text, long / Math.max(short, 1e-6)), bag);
       swap(new THREE.MeshBasicMaterial({ map: tex, color: LIT_BY_SCREENS.clone().multiplyScalar(1.6), toneMapped: false }));
     } else if (name.startsWith('led_')) {
       // emissive colour × strength from the bake material, pushed past 1 so

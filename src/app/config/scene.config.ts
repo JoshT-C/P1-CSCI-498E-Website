@@ -25,3 +25,9 @@ export const CAMERA_TAU_MS = { spine: 110, station: 380 } as const;
 
 /** The tube's warm-up after the scene starts, ms. */
 export const WARMUP = { delayMs: 350, durationMs: 1600 } as const;
+
+/** The floppy shelf: disks per row, and each disk's label stripe (by shelf
+ *  order). The panel's disk buttons use the same stripes and rows, so each
+ *  button can be matched to its disk at a glance. */
+export const FLOPPY_PER_ROW = 3;
+export const FLOPPY_STRIPES = ['#c0392b', '#2e86c1', '#27ae60', '#d4a017', '#8e44ad', '#16a085'] as const;

@@ -97,7 +97,7 @@ function facing(name: string, dist: number, lift: number, fov: number): CameraPo
 export const STATION_POSES: Readonly<Record<StationId, CameraPose>> = {
   terminal: DESK_VIEW,
   // crouched: the rack lives under the desk
-  rack: facing('rack', 1.25, 0.1, 50),
+  rack: facing('rack', 1.45, 0.1, 50),
   floppies: facing('floppies', 0.75, 0.02, 40),
   whiteboard: facing('whiteboard', 1.45, -0.12, 44),
   laptop: facing('laptop', 0.7, 0.08, 40)

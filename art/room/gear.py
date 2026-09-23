@@ -1,6 +1,6 @@
 """Everything on the desk and walls: the VT100 and its keyboard, the two
 modern monitors, the laptop on its stand, the black keyboard and mouse,
-headphones on stands and the mic on the hutch, the whiteboard frame and the
+the crafting table on the hutch, the whiteboard frame and the
 two flags.
 
 Screens, the CRT glass and the whiteboard surface are 'live' objects: they
@@ -58,7 +58,9 @@ def vt100(pal):
     sin, cos = math.sin(VT100['yaw']), math.cos(VT100['yaw'])
     local_z = _face_z(fy) + 0.008
     anchor('screen', (VT100['x'] + sin * local_z, DESK_TOP + fy, VT100['z'] + cos * local_z), look=(sin, 0, cos), width=VT['sw'], height=VT['sh'])
-    hitbox('terminal', (0.6, 0.5, 0.95), (VT100['x'] + 0.2, DESK_TOP + 0.22, VT100['z']), VT100['yaw'])
+    # the case and its keyboard, no further: a bigger box reached over the
+    # laptop from the doorway and stole its clicks
+    hitbox('terminal', (0.5, 0.42, 0.7), (VT100['x'] + 0.1, DESK_TOP + 0.21, VT100['z']), VT100['yaw'])
     return unit
 
 
@@ -236,33 +238,118 @@ def main_keyboard(pal):
     return g
 
 
-def headphone_stand(pal, name, at, cup_color='fabric_dark'):
-    base = cylinder(f'{name}_base', 0.055, 0.012, (0, 0.006, 0), pal['steel_satin'], verts=40, bevel=0.003)
-    pole = cylinder(f'{name}_pole', 0.008, 0.24, (0, 0.13, 0), pal['steel_satin'], verts=16)
-    saddle = box(f'{name}_saddle', (0.12, 0.012, 0.03), (0, 0.255, 0), pal['rubber'], bevel=0.005)
-    # headband: half torus
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.085, minor_radius=0.012, major_segments=40, minor_segments=10)
-    band = bpy.context.active_object
-    band.name = f'{name}_band'
-    lib.link(band)
+def _pixel_image(name, rows):
+    """A 16x16 image from rows of hex colours, top row first."""
+    n = len(rows)
+    img = bpy.data.images.new(name, n, n, alpha=False)
+    px = []
+    for row in reversed(rows):  # Blender images start at the bottom
+        for c in row:
+            px += _srgb(c) + [1.0]
+    img.pixels = px
+    img.pack()
+    return img
+
+
+def _wood(x, y, base, seam, seams=(4, 8, 12)):
+    """Oak planks: horizontal seams, staggered butt joints, a little grain."""
+    h = (x * 73 + y * 151 + x * y * 7) % 11
+    if y in seams or (y // 4) % 2 == 0 and x == 7 or (y // 4) % 2 == 1 and x == 12:
+        return seam
+    return base[h % len(base)]
+
+
+# a small palette for the crafting table, loosely after the game's
+PLANK = ['#b8935a', '#a8844e', '#bf9b62', '#a17e49']
+SEAM = '#735533'
+FRAME = '#5c3f23'
+IRON = ['#9b9b9b', '#c4c4c4', '#6d6d6d']
+HANDLE = '#6b4a2a'
+
+
+def _table_top():
+    rows = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if x in (0, 15) or y in (0, 15):
+                row.append(FRAME)
+            elif 2 <= x <= 13 and 2 <= y <= 13 and (x in (2, 6, 9, 13) or y in (2, 6, 9, 13)):
+                row.append(SEAM)
+            else:
+                row.append(_wood(x, y, PLANK, SEAM, seams=()))
+        rows.append(row)
+    return rows
+
+
+def _table_side(tools):
+    rows = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if y < 3:
+                row.append(FRAME if y != 1 else SEAM)
+            elif x in (0, 15):
+                row.append(FRAME)
+            else:
+                row.append(_wood(x, y, PLANK, SEAM, seams=(7, 11)))
+        rows.append(row)
+    if tools:
+        # a saw on the left: blade with a darker toothed edge, wooden grip
+        for y in range(5, 13):
+            edge = 5 - (y - 5) // 3          # the blade narrows to the tip
+            for x in range(2, edge + 1):
+                rows[y][x] = IRON[1] if x < edge else (IRON[2] if y % 2 else IRON[0])
+        for y in range(3, 5):
+            for x in range(2, 5):
+                rows[y][x] = HANDLE
+        # a hammer on the right: iron head across, handle down
+        for x in range(9, 14):
+            rows[5][x] = IRON[0]
+            rows[6][x] = IRON[2]
+        for y in range(7, 14):
+            rows[y][11] = HANDLE
+    return rows
+
+
+def crafting_table(pal):
+    """A Minecraft crafting table, the size of a desk ornament, on the hutch
+    top: plank sides with the saw and hammer on the front, the 3x3 grid on
+    top. Pixel textures sampled nearest, so the texels stay square."""
+    import materials as M
+    s = 0.2
+    mats = {}
+    for key, rows in (('top', _table_top()), ('front', _table_side(True)), ('side', _table_side(False))):
+        mat = M.image_material(f'craft_{key}', _pixel_image(f'craft_{key}_img', rows), 0.85)
+        for node in mat.node_tree.nodes:
+            if node.type == 'TEX_IMAGE':
+                node.interpolation = 'Closest'
+        mats[key] = mat
+    mesh = bpy.data.meshes.new('crafting_table')
     bm = bmesh.new()
-    bm.from_mesh(band.data)
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.y < -0.02], context='VERTS')
-    bm.to_mesh(band.data)
+    bmesh.ops.create_cube(bm, size=s)
+    uv = bm.loops.layers.uv.new('UVMap')
+    for f in bm.faces:
+        n = f.normal
+        if abs(n.z) > 0.5:
+            axes, f.material_index = (lambda c: (c.x, c.y)), 0
+        elif n.x > 0.5:
+            axes, f.material_index = (lambda c: (c.y, c.z)), 1   # front, faces +x (the room)
+        elif n.x < -0.5:
+            axes, f.material_index = (lambda c: (-c.y, c.z)), 2
+        else:
+            axes, f.material_index = ((lambda c: (-c.x, c.z)) if n.y > 0 else (lambda c: (c.x, c.z))), 2
+        for loop in f.loops:
+            u, v = axes(loop.vert.co)
+            loop[uv].uv = (u / s + 0.5, v / s + 0.5)
+    bm.to_mesh(mesh)
     bm.free()
-    band.rotation_euler = (math.pi / 2, 0, 0)
-    band.location = P(0, 0.26 - 0.005, 0)
-    band.data.materials.append(pal['plastic_black'])
-    cups = [cylinder(f'{name}_cup_{s}', 0.048, 0.035, (s * 0.09, 0.2, 0), pal[cup_color], axis='x', verts=40, bevel=0.01) for s in (-1, 1)]
-    return group(name, [base, pole, saddle, band] + cups, at, 0.4)
-
-
-def mic(pal):
-    body = cylinder('mic_body', 0.034, 0.2, (0, 0.2, 0), pal['mic_silver'], verts=48, bevel=0.02)
-    grille = cylinder('mic_grille', 0.035, 0.07, (0, 0.27, 0), pal['mesh_grille'], verts=48, bevel=0.015)
-    yoke = box('mic_yoke', (0.09, 0.14, 0.012), (0, 0.13, 0), pal['mic_silver'], bevel=0.005)
-    base = cylinder('mic_base', 0.065, 0.02, (0, 0.01, 0), pal['mic_silver'], verts=48, bevel=0.006)
-    return group('mic', [body, grille, yoke, base], (ROOM['left_x'] + 0.13, HUTCH['top_y'] + 0.01, -1.3), 1.2)
+    obj = lib.new_object('crafting_table', mesh)
+    for key in ('top', 'front', 'side'):
+        obj.data.materials.append(mats[key])
+    obj.location = P(ROOM['left_x'] + 0.13, HUTCH['top_y'] + 0.01 + s / 2, -1.3)
+    obj.rotation_euler = (0, 0, 0.18)
+    return obj
 
 
 def _flag_image(name, w, h, painter):
@@ -293,18 +380,16 @@ def blue_cross(u, v):
 
 
 def progress_pride(u, v):
+    """Progress Pride: six stripes, and at the hoist a chevron pointing
+    toward the fly. Its bands, innermost first: white, pink, light blue,
+    brown, black; the black band's outer edges start at the hoist corners."""
     stripes = ['#e40303', '#ff8c00', '#ffed00', '#008026', '#004dff', '#750787']
-    chevrons = ['#000000', '#613915', '#74d7ee', '#ffafc8', '#ffffff']
-    # chevron: points at distance |v-0.5| from the hoist
-    d = u - abs(v - 0.5) * 0.9
-    band = 0.075
-    for i, c in enumerate(chevrons):
-        if d < band * (len(chevrons) - i) - 0.05:
-            pass
-    idx = int(d / band + 0.7)
-    if d < band * 5 - 0.03:
-        k = max(0, min(4, int(d / band)))
-        return _srgb(chevrons[4 - k]) if d >= 0 else _srgb(chevrons[4])
+    chevrons = ['#ffffff', '#ffafc8', '#74d7ee', '#613915', '#000000']
+    slope = 0.7                  # how far (in u) the tip leads the corners
+    band = slope * 0.5 / len(chevrons)
+    d = u + abs(v - 0.5) * slope  # constant along each chevron edge
+    if d < band * len(chevrons):
+        return _srgb(chevrons[int(d / band)])
     return _srgb(stripes[min(5, int(v * 6))])
 
 
@@ -390,8 +475,6 @@ def build(pal):
         anchor(f'monitor_{name}', (spec['x'] + sin * 0.01, DESK_TOP + cy, spec['z'] + cos * 0.01), look=(sin, 0, cos), width=w, height=h)
     laptop(pal)
     main_keyboard(pal)
-    headphone_stand(pal, 'hp_a', (ROOM['left_x'] + 0.13, HUTCH['top_y'] + 0.01, -1.78))
-    headphone_stand(pal, 'hp_b', (ROOM['left_x'] + 0.13, HUTCH['top_y'] + 0.01, -0.85), 'plastic_black')
-    mic(pal)
+    crafting_table(pal)
     whiteboard(pal)
     flags(pal)

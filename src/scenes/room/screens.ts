@@ -138,17 +138,23 @@ export function paintLaptop(): HTMLCanvasElement {
 }
 
 /** Label-maker tape: black on off-white, embossed-looking. */
-export function paintLabel(text: string): HTMLCanvasElement {
-  const [c, ctx] = canvas2d(8, 64);
-  ctx.font = `600 44px ${FONT}`;
-  const tw = Math.ceil(ctx.measureText(text).width) + 36;
-  c.width = tw; // resizing clears the canvas and its state
+export function paintLabel(text: string, aspect: number): HTMLCanvasElement {
+  const h = 64;
+  const w = Math.max(h, Math.round(h * aspect));
+  const [c, ctx] = canvas2d(w, h);
   ctx.fillStyle = '#e8e2cf';
-  ctx.fillRect(0, 0, tw, 64);
-  ctx.font = `600 44px ${FONT}`;
+  ctx.fillRect(0, 0, w, h);
+  // 44 px unless the text would overrun the tape; never stretched
+  let size = 44;
+  ctx.font = `600 ${size}px ${FONT}`;
+  while (size > 16 && ctx.measureText(text).width > w - 36) {
+    size -= 2;
+    ctx.font = `600 ${size}px ${FONT}`;
+  }
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#141414';
-  ctx.fillText(text, 18, 34);
+  ctx.fillText(text, w / 2, h / 2 + 2);
   return c;
 }
 

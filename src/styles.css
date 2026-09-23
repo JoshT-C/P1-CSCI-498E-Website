@@ -1006,8 +1006,6 @@ html.js .term__screen.is-typing {
 }
 
 .station-panel__head {
-  position: relative;
-  padding-right: calc(var(--btn-min) + var(--sp-2));
   margin-bottom: var(--sp-4);
 }
 
@@ -1028,24 +1026,37 @@ html.js .term__screen.is-typing {
 }
 
 .station-panel__close {
-  position: absolute;
-  top: 0;
-  right: 0;
-  min-width: var(--btn-min);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
   min-height: var(--btn-min);
+  margin-bottom: var(--sp-3);
+  padding: 0 var(--sp-2);
   font: inherit;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--ink-soft);
+  font-size: 0.875rem;
+  color: var(--accent);
   background: transparent;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--accent);
   cursor: pointer;
+}
+
+.station-panel__close kbd {
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0 0.35em;
+  color: var(--ink-soft);
+  border: 1px solid var(--hairline);
 }
 
 .station-panel__close:hover {
   color: var(--bg);
   background: var(--accent);
-  border-color: var(--accent);
+}
+
+.station-panel__close:hover kbd {
+  color: var(--bg);
+  border-color: currentColor;
 }
 
 .panel-block + .panel-block {
@@ -1071,6 +1082,7 @@ html.js .term__screen.is-typing {
 
 .node-list {
   list-style: none;
+  padding: 0;
   display: grid;
   gap: var(--sp-3);
 }
@@ -1147,8 +1159,8 @@ html.js .term__screen.is-typing {
 }
 
 .floppy-picker {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-1);
   margin-bottom: var(--sp-4);
 }
@@ -1162,8 +1174,16 @@ html.js .term__screen.is-typing {
   color: #141414;
   background: #efeadb;
   border: 0;
-  border-top: 4px solid #3a3f44;
+  border-top: 4px solid var(--stripe, #3a3f44);
   cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .floppy-chip {
+    padding: 0 2px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
 }
 
 .floppy-chip[aria-pressed='true'] {
@@ -1222,6 +1242,7 @@ html.js .term__screen.is-typing {
 }
 
 .diagram__edge {
+  fill: none;
   stroke: var(--ink-faint);
   stroke-width: 1.5;
 }

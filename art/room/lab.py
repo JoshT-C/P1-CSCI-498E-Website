@@ -27,10 +27,20 @@ RD = 0.44          # depth
 RH = 0.71          # height (≈15U with base and top)
 
 
-def _label_tape(pal, name, text, w, at):
+TAPE_H = 0.012  # 12 mm label-maker tape
+
+
+def _label_tape(pal, name, text, at, left=None):
     """Label-maker tape stuck on a front face (facing +z before the group
-    turns it). The runtime prints `label` onto it; the bake sees a strip."""
-    tape = lib.plane(name, (w, 0.012), at, normal='z', mat=pal['tape'], col='live')
+    turns it). The runtime prints `label` onto it; the bake sees a strip.
+    The tape is as long as its text, the way a label maker cuts it (the
+    runtime draws 44 px monospace, 0.6 em per glyph, on a 64 px strip with
+    18 px margins), so the print is never squashed or stretched. With
+    `left`, the tape starts there instead of being centred on `at`."""
+    w = TAPE_H * (len(text) * 0.6 * 44 + 36) / 64
+    if left is not None:
+        at = (left + w / 2, at[1], at[2])
+    tape = lib.plane(name, (w, TAPE_H), at, normal='z', mat=pal['tape'], col='live')
     tape['label'] = text
     return tape
 
@@ -134,7 +144,7 @@ def shelf_minis(pal, y):
     silver = rounded_slab('mini_silver', 0.13, 0.05, 0.13, 0.006, (-0.165, y + 0.025, RD / 2 - 0.08), pal['alu_silver'], bevel=0.003)
     out.append(silver)
     out.append(box('led_mini_silver', (0.005, 0.005, 0.001), (-0.2, y + 0.022, RD / 2 - 0.0145), pal['led_blue'], col='live'))
-    out.append(_label_tape(pal, 'tape_do_not_touch', 'SERVER DO NOT TOUCH', 0.1, (-0.165, y + 0.041, RD / 2 - 0.0145)))
+    out.append(_label_tape(pal, 'tape_do_not_touch', 'SERVER DO NOT TOUCH', (-0.165, y + 0.041, RD / 2 - 0.0145)))
     for k, x in enumerate((-0.01, 0.145)):
         body = rounded_slab(f'mini_black_{k}', 0.13, 0.05, 0.13, 0.008, (x, y + 0.025, RD / 2 - 0.08), pal['plastic_black'], bevel=0.003)
         ring = cylinder(f'led_mini_ring_{k}', 0.006, 0.002, (x - 0.035, y + 0.025, RD / 2 - 0.0145), pal['led_white'], axis='z', verts=24, col='live')
@@ -164,7 +174,7 @@ def ms02_ultra(pal, y):
     front = join('ms02_front', parts + slats)
     # side perforation (top face now): honeycomb as a dotted patch
     # on the port strip end, clear of the slats
-    tape = _label_tape(pal, 'tape_rtxpro', 'rtxpro · ms-02 ultra', 0.075, (cx - L / 2 + 0.05, y + T - 0.022, fz + 0.001))
+    tape = _label_tape(pal, 'tape_rtxpro', 'rtxpro · ms-02 ultra', (0, y + T - 0.022, fz + 0.0025), left=cx - L / 2 + 0.015)
     perf = box('ms02_perf', (L * 0.55, 0.0008, D * 0.35), (cx + 0.02, y + T + 0.0004, RD / 2 - 0.03 - D * 0.35), pal['perforated'])
     return [front, perf, tape]
 
@@ -200,21 +210,39 @@ def rack(pal):
     objs += ms02_ultra(pal, SHELF_Y['ms02'] + 0.003)
     objs += shelf_bottom(pal)
     g = group('rack', objs, (RACK['x'], 0, RACK['z']), RACK['yaw'])
-    hitbox('rack', (RD + 0.05, RH, RW + 0.4), (RACK['x'], RH / 2, RACK['z'] + 0.15))
-    anchor('rack', (RACK['x'] + RD / 2, RH / 2, RACK['z'] + 0.12), look=(1, 0, 0), width=RW + 0.3, height=RH)
+    # the station takes in the NZXT beside the rack too: it is the arcb60
+    # node the panel lists, so it frames and picks with the rack
+    z0 = NZXT['z'] - 0.13
+    z1 = RACK['z'] + RW / 2 + 0.02
+    hitbox('rack', (RD + 0.05, RH, z1 - z0), (RACK['x'], RH / 2, (z0 + z1) / 2))
+    anchor('rack', (RACK['x'] + RD / 2, RH / 2, (z0 + z1) / 2), look=(1, 0, 0), width=z1 - z0, height=RH)
     return g
 
 
 def nzxt(pal):
-    """NZXT mid tower (the Arc B60 box): mesh front panel, side vent with the
-    RGB glow showing through."""
+    """NZXT mid tower (the Arc B60 box): mesh front panel, and a smoked
+    glass side facing the room with the two intake fans' white rings
+    showing through. The rings are its only light: under the desk corner
+    the black case is otherwise lost in the dark."""
     w, h, d = 0.227, 0.46, 0.44
     body = rounded_slab('nzxt_body', w, h, d, 0.006, (0, h / 2 + 0.01, 0), pal['plastic_black'], bevel=0.003)
     front = box('nzxt_mesh', (w - 0.03, h - 0.06, 0.002), (0, h / 2 + 0.01, d / 2 + 0.001), pal['perforated'])
     feet = [box(f'nzxt_foot_{i}', (0.03, 0.01, 0.1), (sx * 0.08, 0.005, sz * 0.15), pal['rubber']) for i, (sx, sz) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1)))]
+    # local -x is the side that faces the room once the group is turned
+    glass = box('nzxt_glass', (0.002, h - 0.05, d - 0.06), (-w / 2 - 0.001, h / 2 + 0.01, -0.01), pal['glass_smoke'])
+    rings = []
+    for i, y in enumerate((h * 0.66, h * 0.34)):
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.052, minor_radius=0.0035, major_segments=48, minor_segments=8)
+        ring = bpy.context.active_object
+        ring.name = f'led_nzxt_fan_{i}'
+        lib.link(ring, 'live')
+        ring.data.materials.append(pal['fan_ring'])
+        ring.rotation_euler = (0, math.pi / 2, 0)  # face along x
+        ring.location = P(-w / 2 - 0.0025, y + 0.01, d / 2 - 0.12)
+        rings.append(ring)
     power = cylinder('led_nzxt_power', 0.004, 0.002, (w / 2 - 0.02, h + 0.011, d / 2 - 0.03), pal['led_white'], verts=16, col='live')
-    tape = _label_tape(pal, 'tape_arcb60', 'arcb60 · arc b60', 0.12, (0, 0.06, d / 2 + 0.0035))
-    return group('nzxt', [join('nzxt', [body, front] + feet), power, tape], (NZXT['x'], 0, NZXT['z']), NZXT['yaw'])
+    tape = _label_tape(pal, 'tape_arcb60', 'arcb60 · arc b60', (0, 0.06, d / 2 + 0.0035))
+    return group('nzxt', [join('nzxt', [body, front, glass] + feet), power, tape] + rings, (NZXT['x'], 0, NZXT['z']), NZXT['yaw'])
 
 
 def thelio(pal):
@@ -226,7 +254,7 @@ def thelio(pal):
     vent = box('thelio_vent', (0.002, 0.16, 0.2), (-w / 2 - 0.0005, 0.12, d / 2 - 0.14), pal['perforated'])
     feet = [box(f'thelio_foot_{i}', (0.03, 0.008, 0.06), (sx * 0.08, 0.004, sz * 0.16), pal['rubber']) for i, (sx, sz) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1)))]
     power = cylinder('led_thelio_power', 0.006, 0.003, (w / 2 - 0.07, h + 0.009, d / 2 - 0.04), pal['led_white'], verts=20, col='live')
-    tape = _label_tape(pal, 'tape_thelio', 'thelio · rtx 5090', 0.12, (-0.03, 0.05, d / 2 + 0.0015))
+    tape = _label_tape(pal, 'tape_thelio', 'thelio · rtx 5090', (-0.02, 0.05, d / 2 + 0.0015))
     g = group('thelio', [join('thelio', [body, strip, vent] + feet), power, tape], (THELIO['x'], 0, THELIO['z']), THELIO['yaw'])
     return g
 
@@ -253,4 +281,6 @@ def build(pal):
     _glow('glow_das', (0.3, 0.45, 1.0), 0.15, (fx, 0.14, RACK['z'] + 0.07))
     _glow('glow_switch', (0.6, 0.8, 0.5), 0.08, (fx, RH - 0.06, RACK['z']))
     nzxt(pal)
+    # the fan rings' spill on the floor and the rack's side
+    _glow('glow_nzxt', (0.75, 0.82, 1.0), 0.6, (NZXT['x'], 0.25, NZXT['z'] + 0.16))
     thelio(pal)

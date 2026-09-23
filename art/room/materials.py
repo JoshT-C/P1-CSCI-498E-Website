@@ -267,6 +267,9 @@ def palette():
         'key_brown': solid('key_brown', '#7e715c', 0.55),
         'key_dark': solid('key_dark', '#3a352e', 0.55),
         'plastic_black': solid('plastic_black', '#18181a', 0.55, grain=0.1, bump=0.08),
+        # smoked tempered glass: near-black, glossy
+        'glass_smoke': solid('glass_smoke', '#0e1013', 0.08, coat=0.6),
+        'fan_ring': emissive('fan_ring', '#cfdcff', 1.6),
         'plastic_gloss': solid('plastic_gloss', '#0b0b0c', 0.18, coat=0.4),
         'plastic_white': solid('plastic_white', '#e4e2dc', 0.4, grain=0.03),
         'switch_grey': solid('switch_grey', '#4a4d4f', 0.45, 0.4, grain=0.06),

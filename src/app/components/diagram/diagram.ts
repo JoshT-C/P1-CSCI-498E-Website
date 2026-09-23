@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import type { Diagram } from '../../services/content/homelab';
+import { routeEdge } from '../../utils/diagram-route';
 
 const W = 640;
 const H = 420;
@@ -31,12 +32,12 @@ interface Box {
           </marker>
         </defs>
         @for (e of edges(); track $index) {
-          <line
-            [attr.x1]="e.x1" [attr.y1]="e.y1" [attr.x2]="e.x2" [attr.y2]="e.y2"
+          <polyline
+            [attr.points]="e.points"
             class="diagram__edge" [class.diagram__edge--dashed]="e.dashed"
             [attr.marker-end]="'url(#' + markerId() + ')'" />
           @if (e.label) {
-            <text [attr.x]="e.lx" [attr.y]="e.ly" class="diagram__edge-label">{{ e.label }}</text>
+            <text [attr.x]="e.lx" [attr.y]="e.ly" dominant-baseline="middle" class="diagram__edge-label">{{ e.label }}</text>
           }
         }
         @for (b of boxes(); track b.id) {
@@ -83,30 +84,13 @@ export class DiagramComponent {
       const a = byId.get(e.from);
       const b = byId.get(e.to);
       if (!a || !b) return [];
-      const [x1, y1] = exitPoint(a, b.x - a.x, b.y - a.y);
-      const [x2, y2] = exitPoint(b, a.x - b.x, a.y - b.y);
-      // label beside the line, off along its normal; dashed (return) edges
-      // put theirs further along so they do not meet the forward labels
-      const t = e.dashed ? 0.3 : 0.5;
-      const len = Math.hypot(x2 - x1, y2 - y1) || 1;
-      const lx = x1 + (x2 - x1) * t - ((y2 - y1) / len) * 10 + 4;
-      const ly = y1 + (y2 - y1) * t + ((x2 - x1) / len) * 10;
-      return [{ x1, y1, x2, y2, lx, ly, label: e.label, dashed: !!e.dashed }];
+      const r = routeEdge({ ...a, h: BOX_H }, { ...b, h: BOX_H }, !!e.elbow, 4, 10);
+      const points = r.points.map(p => p.join(',')).join(' ');
+      return [{ points, lx: r.label.x, ly: r.label.y, label: e.label, dashed: !!e.dashed }];
     });
   });
 
   labelOf(id: string): string {
     return this.diagram().nodes.find(n => n.id === id)?.label ?? id;
   }
-}
-
-/** Where a line toward (dx, dy) leaves a box's border, plus a small gap. */
-function exitPoint(b: Box, dx: number, dy: number): [number, number] {
-  const len = Math.hypot(dx, dy) || 1;
-  const sx = dx / len;
-  const sy = dy / len;
-  const tx = sx === 0 ? Infinity : b.w / 2 / Math.abs(sx);
-  const ty = sy === 0 ? Infinity : BOX_H / 2 / Math.abs(sy);
-  const t = Math.min(tx, ty) + 4;
-  return [b.x + sx * t, b.y + sy * t];
 }

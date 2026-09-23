@@ -45,7 +45,7 @@ RACK = dict(x=ROOM['left_x'] + 0.3, z=-1.02, yaw=1.5707963, width=0.54, depth=0.
 NZXT = dict(x=ROOM['left_x'] + 0.28, z=-1.66, yaw=1.5707963)
 THELIO = dict(x=0.42, z=ROOM['back_z'] + 0.3, yaw=0.0)
 
-# Left wall above the side shelf, clear of the hutch and its headphones.
+# Left wall above the side shelf, clear of the hutch.
 WHITEBOARD = dict(x=ROOM['left_x'] + 0.012, y=1.6, z=-0.05, w=1.0, h=0.6)
 # The cubby between the dividers at z -0.98 and -0.64; a two-step riser
 # stands the disks in two rows of three.

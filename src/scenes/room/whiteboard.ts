@@ -18,9 +18,11 @@ import {
   FLOPPIES,
   NODES,
   type Diagram,
+  type DiagramNode,
   type Ink
 } from '../../app/services/content/homelab';
 import { STACK } from '../../app/services/content/projects';
+import { routeEdge } from '../../app/utils/diagram-route';
 import { canvas2d, rng } from './textures';
 
 export type DiagramTheme = 'marker' | 'screen';
@@ -81,12 +83,12 @@ class Pen {
     const { ctx } = this;
     ctx.font = `${weight} ${size}px ${FONT}`;
     ctx.fillStyle = ink;
-    ctx.textBaseline = 'alphabetic';
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(this.marker ? (this.r() - 0.5) * 0.02 : 0);
     ctx.fillText(s, 0, 0);
     ctx.restore();
+    ctx.textBaseline = 'alphabetic';
     return ctx.measureText(s).width;
   }
 
@@ -96,14 +98,22 @@ class Pen {
     this.line(x, y + 16, x + w, y + 20, ink, 3);
   }
 
-  /** A loose ellipse around a box, as when you circle something. */
-  circle(x: number, y: number, w: number, h: number, ink: string): void {
+  /** A loose loop around a box, as when you ring a row: a stadium drawn
+   *  in one stroke that overshoots where it closes. An ellipse wide enough
+   *  to clear a long row's corners would run into the rows beside it. */
+  loop(x: number, y: number, w: number, h: number, ink: string): void {
     const { ctx } = this;
+    const r = h / 2;
     ctx.strokeStyle = ink;
     ctx.lineWidth = 4;
     ctx.globalAlpha = 0.85;
     ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2, w / 2 + 18, h / 2 + 14, -0.02, 0.15, Math.PI * 2 + 0.35);
+    ctx.moveTo(x + r + 40, y - 3);
+    ctx.lineTo(x + w - r, y);
+    ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(x + r, y + h);
+    ctx.arc(x + r, y + r, r, Math.PI / 2, (Math.PI * 3) / 2);
+    ctx.lineTo(x + r + 90, y + 4);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -142,35 +152,50 @@ export function paintDiagrams(diagrams: readonly Diagram[], theme: DiagramTheme,
     const py = (v: number): number => 170 + v * (H - 250);
     pen.title(d.title, ox + pad, 96, INK.black);
 
-    ctx.font = `500 30px ${FONT}`;
+    // One box size for the whole panel, shrunk until the widest row of
+    // boxes fits side by side with a gap between them.
+    const inner = panelW - pad * 2;
+    let size = 30;
+    const widthAt = (label: string): number => {
+      ctx.font = `500 ${size}px ${FONT}`;
+      return ctx.measureText(label).width + size * 1.4;
+    };
+    const rows = new Map<number, DiagramNode[]>();
+    for (const n of d.nodes) rows.set(n.y, [...(rows.get(n.y) ?? []), n]);
+    const fits = (): boolean =>
+      [...rows.values()].every(row => {
+        const sorted = [...row].sort((p, q) => p.x - q.x);
+        return sorted.every((n, i) => {
+          const half = widthAt(n.label) / 2;
+          if (px(n.x) - half < ox + pad * 0.4 || px(n.x) + half > ox + pad + inner + pad * 0.6) return false;
+          const next = sorted[i + 1];
+          return !next || px(n.x) + half + 24 < px(next.x) - widthAt(next.label) / 2;
+        });
+      });
+    while (size > 18 && !fits()) size -= 1;
+    const boxH = size * 2.1;
     const boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
-    for (const n of d.nodes) boxes.set(n.id, { x: px(n.x), y: py(n.y), w: ctx.measureText(n.label).width + 44, h: 64 });
+    for (const n of d.nodes) boxes.set(n.id, { x: px(n.x), y: py(n.y), w: widthAt(n.label), h: boxH });
 
     for (const e of d.edges) {
       const a = boxes.get(e.from);
       const b = boxes.get(e.to);
       if (!a || !b) continue;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const exit = (box: typeof a, sx: number, sy: number): [number, number] => {
-        const tx = sx === 0 ? Infinity : box.w / 2 / Math.abs(sx);
-        const ty = sy === 0 ? Infinity : box.h / 2 / Math.abs(sy);
-        const t = Math.min(tx, ty) + 8;
-        return [box.x + sx * t, box.y + sy * t];
-      };
-      const [x0, y0] = exit(a, dx / len, dy / len);
-      const [x1, y1] = exit(b, -dx / len, -dy / len);
-      pen.line(x0, y0, x1, y1, INK.black, 3.5, e.dashed);
+      const r = routeEdge(a, b, !!e.elbow, 8, 22);
+      for (let k = 0; k + 1 < r.points.length; k++) {
+        const [x0, y0] = r.points[k];
+        const [x1, y1] = r.points[k + 1];
+        pen.line(x0, y0, x1, y1, INK.black, 3.5, e.dashed);
+      }
+      // arrowhead along the last stretch
+      const [x0, y0] = r.points[r.points.length - 2];
+      const [x1, y1] = r.points[r.points.length - 1];
       const ang = Math.atan2(y1 - y0, x1 - x0);
       pen.line(x1, y1, x1 - 22 * Math.cos(ang - 0.45), y1 - 22 * Math.sin(ang - 0.45), INK.black, 3.5);
       pen.line(x1, y1, x1 - 22 * Math.cos(ang + 0.45), y1 - 22 * Math.sin(ang + 0.45), INK.black, 3.5);
       if (e.label) {
-        // labels sit beside the line, pushed off along its normal
-        const t = e.dashed ? 0.3 : 0.5;
-        const nx = -(y1 - y0) / len;
-        const ny = (x1 - x0) / len;
-        pen.text(e.label, x0 + (x1 - x0) * t + nx * 18 + 6, y0 + (y1 - y0) * t + ny * 18, INK.red, 24, 400);
+        ctx.textBaseline = 'middle';
+        pen.text(e.label, r.label.x, r.label.y, INK.red, 24, 400);
       }
     }
 
@@ -185,7 +210,7 @@ export function paintDiagrams(diagrams: readonly Diagram[], theme: DiagramTheme,
       pen.line(x0 + b.w + o, y0 + b.h, x0 - o, y0 + b.h, ink);
       pen.line(x0, y0 + b.h + o, x0, y0 - o, ink);
       ctx.textAlign = 'center';
-      pen.text(n.label, b.x, b.y + 10, ink, 30);
+      pen.text(n.label, b.x, b.y + size / 3, ink, size);
       ctx.textAlign = 'left';
     }
   });
@@ -201,7 +226,7 @@ export function paintWhiteboard(view: WhiteboardView, W = 1600, H = 960): HTMLCa
 
   if (view.kind === 'models') {
     pen.title('which model is loaded', x, 110, INK.black);
-    const cols = [x, x + 560, x + 980, x + 1260];
+    const cols = [x, x + 560, x + 980];
     pen.text('model', cols[0], 210, INK.blue, 28);
     pen.text('context', cols[1], 210, INK.blue, 28);
     pen.text('decode', cols[2], 210, INK.blue, 28);
@@ -209,20 +234,23 @@ export function paintWhiteboard(view: WhiteboardView, W = 1600, H = 960): HTMLCa
       const y = 300 + i * 110;
       pen.text(m.name, cols[0], y, INK.black, 36);
       pen.text(m.context, cols[1], y, INK.black, 36);
-      pen.text(m.speed, cols[2], y, INK.black, 36);
+      const speedW = pen.text(m.speed, cols[2], y, INK.black, 36);
       if (i === ACTIVE_BACKEND) {
-        pen.circle(cols[0] - 10, y - 44, cols[2] + 200 - cols[0], 58, INK.red);
-        pen.text('loaded', cols[3], y, INK.red, 34, 600);
+        const right = cols[2] + speedW + 30;
+        pen.loop(cols[0] - 34, y - 52, right - cols[0] + 34, 74, INK.red);
+        pen.text('loaded', right + 40, y, INK.red, 34, 600);
       }
     });
     pen.text('32 GB of VRAM holds one model at a time.', x, H - 90, INK.green, 32);
   } else if (view.kind === 'machines') {
     pen.title('machines', x, 110, INK.black);
+    // one row per machine: name, then gpu / cpu / memory in columns
+    const cols = [x + 30, x + 460, x + 1170];
+    ['gpu', 'cpu', 'memory'].forEach((h, k) => pen.text(h, cols[k], 200, INK.blue, 26));
     NODES.forEach((n, i) => {
-      const y = 230 + i * 170;
-      pen.text(n.tape, x, y, INK.blue, 40, 600);
-      const facts = [n.gpu, n.cpu, n.memory].filter((f): f is string => f !== null).join('  /  ');
-      pen.text(facts, x + 30, y + 58, INK.black, 30);
+      const y = 280 + i * 160;
+      pen.text(n.tape, x, y, INK.black, 38, 600);
+      [n.gpu, n.cpu, n.memory].forEach((f, k) => pen.text(f ?? '-', cols[k], y + 56, INK.black, 28));
     });
   } else if (view.kind === 'laptop') {
     const node = NODES.find(n => n.id === 'laptop');

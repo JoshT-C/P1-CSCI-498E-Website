@@ -1,11 +1,11 @@
 <dialog #dialog class="station-panel" [attr.aria-labelledby]="'station-title'" (close)="onClose()" (pointerdown)="onDialogClick($event)">
   <div class="station-panel__inner">
     <header class="station-panel__head">
+      <button type="button" class="station-panel__close" (click)="close()" aria-label="Back to the room">
+        <span aria-hidden="true">&larr;</span> back to room <kbd aria-hidden="true">esc</kbd>
+      </button>
       <p class="mono station-panel__cmd" aria-hidden="true"><span class="prompt">joshua&#64;t-c:~$</span> {{ command() }}</p>
       <h2 id="station-title" class="station-panel__title">{{ title() }}</h2>
-      <button type="button" class="station-panel__close" (click)="close()" aria-label="Close and step back">
-        <span aria-hidden="true">esc</span>
-      </button>
     </header>
 
     @switch (station()) {
@@ -57,11 +57,13 @@
       }
 
       @case ('floppies') {
-        <div class="floppy-picker" role="group" aria-label="Choose a disk">
-          @for (f of floppies; track f.id) {
-            <button type="button" class="floppy-chip mono" [attr.aria-pressed]="f.id === floppyId()" (click)="pick(f.id)">
-              {{ f.label }}
-            </button>
+        <div class="floppy-picker" role="group" aria-label="Choose a disk, laid out as on the shelf">
+          @for (row of floppyRows; track $index) {
+            @for (f of row; track f.id) {
+              <button type="button" class="floppy-chip mono" [style.--stripe]="f.stripe" [attr.aria-pressed]="f.id === floppyId()" (click)="pick(f.id)">
+                {{ f.label }}
+              </button>
+            }
           }
         </div>
         @if (floppy(); as f) {

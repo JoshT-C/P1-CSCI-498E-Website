@@ -11,6 +11,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { ACTIVE_BACKEND, DIAGRAMS, FLOPPIES, NODES, SERVICES, type HomelabNode } from '../../services/content/homelab';
 import { STACK } from '../../services/content/projects';
 import { SceneSyncService } from '../../services/scene-sync.service';
+import { FLOPPY_PER_ROW, FLOPPY_STRIPES } from '../../config/scene.config';
 import { DiagramComponent } from '../diagram/diagram';
 
 interface Spec {
@@ -61,7 +62,16 @@ export class StationPanelComponent {
   readonly activeBackend = ACTIVE_BACKEND;
   readonly switching = STACK.switching;
   readonly diagrams = DIAGRAMS;
-  readonly floppies = FLOPPIES;
+  /** The disk buttons laid out as the shelf is: the back row (higher, on
+   *  the riser) above the front row, each row left to right. */
+  readonly floppyRows = (() => {
+    const rows: { id: string; label: string; stripe: string }[][] = [];
+    FLOPPIES.forEach((f, i) => {
+      const r = Math.floor(i / FLOPPY_PER_ROW);
+      (rows[r] ??= []).push({ id: f.id, label: f.label, stripe: FLOPPY_STRIPES[i % FLOPPY_STRIPES.length] });
+    });
+    return rows.reverse();
+  })();
   readonly floppy = computed(() => FLOPPIES.find(f => f.id === this.floppyId()) ?? null);
 
   readonly title = computed(() => {
