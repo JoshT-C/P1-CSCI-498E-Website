@@ -259,6 +259,13 @@ a:hover {
   border-bottom: 1px solid var(--hairline);
 }
 
+/* In the session the header sits over scrolling text, not the room:
+   solid, so the text does not show through it. */
+:root[data-portal='in'] .site-header,
+:root[data-render='css'] .site-header {
+  background: #111410;
+}
+
 .site-header-inner {
   max-width: var(--container-max);
   margin: 0 auto;
@@ -404,6 +411,11 @@ a:hover {
 }
 
 :root[data-render='3d'] .intro__inner {
+  /* the pane keeps to the left edge at any width; centred in the content
+     column it floated mid-wall on wide screens, far from the room */
+  max-width: none;
+  margin: 0;
+  padding-left: clamp(0px, 3vw - 8px, 72px);
   grid-template-rows: 1fr auto;
   opacity: var(--intro-fade, 1);
   visibility: var(--intro-visibility, visible);
@@ -1644,5 +1656,36 @@ html.js .term__screen.is-typing {
 
   .brand {
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Name and four links do not fit on one row below ~480px: the name gets
+     its own row and the links spread across the full width. --header-h
+     follows, so the offsets that clear the header still line up. */
+  :root {
+    --header-h: 88px;
+  }
+
+  /* the 8px on top clears the CRT bezel drawn over the page in the session */
+  .site-header-inner {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 0;
+    padding: 8px var(--sp-2) 0;
+  }
+
+  .brand {
+    padding: 0;
+    line-height: 36px;
+  }
+
+  .site-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .site-nav a {
+    padding: 0 4px;
   }
 }

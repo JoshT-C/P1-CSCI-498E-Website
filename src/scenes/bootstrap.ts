@@ -26,7 +26,7 @@ import { SCENE_TYPING } from '../app/config/terminal.config';
 import { SITE_SECTIONS, type SiteSection } from '../app/config/site.config';
 import { fovForAspect, PORTAL_AT, STATION_POSES, spinePose, type CameraPose } from './camera-path';
 import { loadRoom, type Room, type Tier } from './room';
-import { isStationId, type StationId } from './room/layout';
+import { anchor, isStationId, type StationId } from './room/layout';
 import { buildScreenLines, SCREEN_MAX_COLS } from './screen-content';
 import { createTerminal } from './screen-text';
 import { FilmShader } from './shaders/film';
@@ -188,10 +188,35 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   let introRun = 1;
   let width = 1;
   let height = 1;
+  /** The opening shot's sideways shift (see aimCamera), from the intro
+   *  pane's right edge and where the whiteboard lands on screen. */
+  let introOffset = 0;
+  const probe = new THREE.PerspectiveCamera();
+  const corner = new THREE.Vector3();
   const measure = (): void => {
     const rect = intro.getBoundingClientRect();
     introTop = rect.top + window.scrollY;
     introRun = Math.max(rect.height - window.innerHeight, 1);
+    const paneRight = intro.querySelector('.intro__panel')?.getBoundingClientRect().right ?? 0;
+    // Centre the room in the space right of the pane — unless that would
+    // slide the whiteboard (the room's left-most prop in the opening shot)
+    // under the pane: then shift only as far as keeps it 24px clear.
+    const start = spinePose(0, tier);
+    probe.fov = fovForAspect(start.fov, width / height);
+    probe.aspect = width / height;
+    probe.position.set(start.position.x, start.position.y, start.position.z);
+    probe.lookAt(start.target.x, start.target.y, start.target.z);
+    probe.updateMatrixWorld();
+    probe.updateProjectionMatrix();
+    const wb = anchor('whiteboard');
+    let boardLeft = Infinity;
+    for (const dy of [-0.5, 0.5]) {
+      for (const dz of [-0.5, 0.5]) {
+        corner.set(wb.position[0], wb.position[1] + dy * (wb.height ?? 0), wb.position[2] + dz * (wb.width ?? 0)).project(probe);
+        boardLeft = Math.min(boardLeft, ((corner.x + 1) / 2) * width);
+      }
+    }
+    introOffset = Math.max(Math.min(-paneRight / 2, boardLeft - paneRight - 24), -width * 0.35);
   };
   const resize = (): void => {
     width = host.clientWidth || window.innerWidth;
@@ -303,12 +328,12 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     cur.target.lerp(want.target, k);
     cur.fov += (fovForAspect(pose.fov, camera.aspect) - cur.fov) * k;
     // Keep the prop clear of the DOM: with a panel open (right side) frame
-    // it left of centre; in the opening shot (intro pane on the left) frame
-    // the room right of centre, easing out as the camera walks in.
+    // it left of centre; in the opening shot the room sits right of the
+    // intro pane (introOffset), easing out as the camera walks in.
     let wantOffset = 0;
     if (width > 900) {
       if (station) wantOffset = width * 0.2;
-      else if (spineP < PICKABLE_UNTIL) wantOffset = -width * 0.24 * (1 - spineP / PICKABLE_UNTIL);
+      else if (spineP < PICKABLE_UNTIL) wantOffset = introOffset * (1 - spineP / PICKABLE_UNTIL);
     }
     cur.offset += (wantOffset - cur.offset) * k;
 
