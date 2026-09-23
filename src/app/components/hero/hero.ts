@@ -4,7 +4,8 @@ import {
   ElementRef,
   OnDestroy,
   PLATFORM_ID,
-  inject
+  inject,
+  signal
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HERO_TYPING } from '../../config/terminal.config';
@@ -17,12 +18,6 @@ import {
   type ScreenSnapshot,
   type Terminal
 } from '../../../scenes/screen-text';
-
-interface TermLineEl {
-  line: HTMLDivElement;
-  prompt: HTMLSpanElement;
-  text: HTMLSpanElement;
-}
 
 function createHeroTerminal(platformId: object): Terminal {
   const reduced =
@@ -48,11 +43,11 @@ const FADE_UNTIL = 0.28;
 
 /** The station nav: every prop in the room, reachable without a pointer. */
 const STATIONS: readonly StationEntry[] = [
-  { id: 'terminal', key: '01', name: 'terminal', what: 'projects, AI stack, about, contact' },
-  { id: 'rack', key: '02', name: 'rack', what: 'machines and models' },
-  { id: 'floppies', key: '03', name: 'floppies', what: 'projects not on GitHub' },
-  { id: 'whiteboard', key: '04', name: 'whiteboard', what: 'architecture diagrams' },
-  { id: 'laptop', key: '05', name: 'laptop', what: 'second inference machine' }
+  { id: 'terminal', key: '01', name: 'terminal', what: 'log in and read' },
+  { id: 'rack', key: '02', name: 'rack', what: 'machines, models' },
+  { id: 'floppies', key: '03', name: 'floppies', what: 'more projects' },
+  { id: 'whiteboard', key: '04', name: 'whiteboard', what: 'diagrams' },
+  { id: 'laptop', key: '05', name: 'laptop', what: 'second machine' }
 ];
 
 /**
@@ -65,8 +60,9 @@ const STATIONS: readonly StationEntry[] = [
  * retyped by the shared pure screen-text machine (static under reduced
  * motion), so both modes show identical output from one source.
  *
- * The typing runs in a rAF loop that stops once the queue is idle; the caret
- * blink after that is a CSS animation, so nothing ticks per frame.
+ * The typing runs in a rAF loop that stops once the queue is idle, and
+ * writes each frame to a signal the template renders; the caret blink after
+ * that is a CSS animation, so nothing ticks per frame.
  */
 @Component({
   selector: 'app-hero',
@@ -89,27 +85,17 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly term = createHeroTerminal(this.platformId);
   private io: IntersectionObserver | null = null;
-  private screen: HTMLDivElement | null = null;
-  private readonly pool: TermLineEl[] = [];
-  private caret: HTMLSpanElement | null = null;
+  /** The typed screen, once JS has taken over; null shows the static lines. */
+  readonly typed = signal<ScreenSnapshot | null>(null);
   private raf = 0;
   private lastNow = 0;
   private started = false;
   private fadeRaf = 0;
-  private section: HTMLElement | null = null;
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.section = this.el.nativeElement.querySelector('.intro');
     window.addEventListener('scroll', this.onScroll, { passive: true });
     this.onScroll();
-    this.screen = this.el.nativeElement.querySelector('.term__screen');
-    if (!this.screen) return;
-
-    // JS takes over the prerendered screen: clear it and build the caret.
-    this.screen.replaceChildren();
-    this.caret = document.createElement('span');
-    this.caret.className = 'term__caret';
 
     if ('IntersectionObserver' in window) {
       // Start typing when the hero first scrolls into view; on a deep link
@@ -147,7 +133,8 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
     if (this.fadeRaf) return;
     this.fadeRaf = requestAnimationFrame(() => {
       this.fadeRaf = 0;
-      const el = this.section;
+      // queried each time: hydration can replace the section after init
+      const el = this.el.nativeElement.querySelector('.intro') as HTMLElement | null;
       if (!el) return;
       const run = Math.max(el.offsetHeight - window.innerHeight, 1);
       const p = (window.scrollY - el.offsetTop) / run;
@@ -158,13 +145,13 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
   };
 
   private start(): void {
-    if (this.started || !this.screen) return;
+    if (this.started) return;
     this.started = true;
     this.term.setSection('hero', this.terminalLines);
     const snap = this.term.snapshot();
     if (snap.idle) {
       // reduced-motion: one full frame, no loop
-      this.paint(snap);
+      this.typed.set(snap);
       return;
     }
     this.lastNow = performance.now();
@@ -176,33 +163,9 @@ export class HeroComponent implements AfterViewInit, OnDestroy {
     this.lastNow = now;
     const snap = this.term.tick(dt);
     if (snap) {
-      this.paint(snap);
+      this.typed.set(snap);
       if (snap.idle) return;
     }
     this.raf = requestAnimationFrame(this.loop);
   };
-
-  private paint(snap: ScreenSnapshot): void {
-    const screen = this.screen!;
-    for (let i = this.pool.length; i < snap.lines.length; i++) {
-      const line = document.createElement('div');
-      line.className = 'term__line';
-      const prompt = document.createElement('span');
-      prompt.className = 'term__prompt';
-      const text = document.createElement('span');
-      line.append(prompt, text);
-      screen.append(line);
-      this.pool.push({ line, prompt, text });
-    }
-    for (let i = 0; i < snap.lines.length; i++) {
-      this.pool[i].prompt.textContent = snap.lines[i].prompt;
-      this.pool[i].text.textContent = snap.lines[i].text;
-    }
-    const target = this.pool[snap.caretLine];
-    if (target && this.caret && this.caret.parentElement !== target.line) {
-      target.line.append(this.caret);
-    }
-    // First paint: the screen becomes visible (html.js hides it until then).
-    screen.classList.add('is-typing');
-  }
 }

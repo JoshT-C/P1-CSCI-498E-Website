@@ -73,6 +73,31 @@ def _finish_atlas(name, merged, image):
     mesh.materials.append(_unlit_atlas_material(f'atlas_{name}', image))
 
 
+def _keep_live_uvs():
+    carrier = bpy.data.images.new('uv_carrier', 4, 4, alpha=False)
+    carrier.pixels = [1.0] * (4 * 4 * 4)
+    carrier.pack()
+    done = set()
+    for o in bpy.data.collections['live'].all_objects:
+        if o.type != 'MESH' or not o.data.uv_layers:
+            continue
+        for slot in o.material_slots:
+            mat = slot.material
+            if mat is None or mat.name in done or not mat.use_nodes:
+                continue
+            done.add(mat.name)
+            nt = mat.node_tree
+            bsdf = nt.nodes.get('Principled BSDF')
+            if bsdf is None or bsdf.inputs['Base Color'].is_linked:
+                continue
+            uv = nt.nodes.new('ShaderNodeUVMap')
+            uv.uv_map = 'UVMap'
+            tex = nt.nodes.new('ShaderNodeTexImage')
+            tex.image = carrier
+            nt.links.new(uv.outputs['UV'], tex.inputs['Vector'])
+            nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+
+
 def _anchors():
     out = {}
     for o in bpy.data.objects:
@@ -121,6 +146,12 @@ def export(out_dir, atlases):
     for mat in bpy.data.materials:
         if mat.use_nodes and 'bake_target' in mat.node_tree.nodes:
             mat.node_tree.nodes.remove(mat.node_tree.nodes['bake_target'])
+
+    # The glTF exporter drops a mesh's UVs when its material samples no
+    # texture, and the live planes (screens, CRT glass, whiteboard, label
+    # tapes) need theirs for the runtime canvases. A 4 px white image read
+    # through UVMap keeps them.
+    _keep_live_uvs()
 
     # Lights shaped the bake; the runtime has no use for them.
     for o in [o for o in bpy.data.objects if o.type == 'LIGHT']:

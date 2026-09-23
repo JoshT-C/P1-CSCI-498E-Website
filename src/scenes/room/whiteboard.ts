@@ -167,7 +167,7 @@ export function paintDiagrams(diagrams: readonly Diagram[], theme: DiagramTheme,
       pen.line(x1, y1, x1 - 22 * Math.cos(ang + 0.45), y1 - 22 * Math.sin(ang + 0.45), INK.black, 3.5);
       if (e.label) {
         // labels sit beside the line, pushed off along its normal
-        const t = e.dashed ? 0.62 : 0.5;
+        const t = e.dashed ? 0.3 : 0.5;
         const nx = -(y1 - y0) / len;
         const ny = (x1 - x0) / len;
         pen.text(e.label, x0 + (x1 - x0) * t + nx * 18 + 6, y0 + (y1 - y0) * t + ny * 18, INK.red, 24, 400);

@@ -355,8 +355,8 @@ def flags(pal):
     stick = cylinder('pride_stick', 0.004, 0.42, (0, 0.0, 0), pal['plastic_black'], verts=12)
     # a spring clip holding the stick against the post
     clip = box('pride_clip', (0.018, 0.03, 0.03), (0, -0.1, -0.013), pal['plastic_black'], bevel=0.003)
-    # flies out toward the room (+z), away from the cubbies
-    return group('flag_pride_g', [f, stick, clip], (FLAG_PRIDE['x'], FLAG_PRIDE['y'], FLAG_PRIDE['z']), -1.4)
+    # flies out over the desk (+x), angled a little toward the room
+    return group('flag_pride_g', [f, stick, clip], (FLAG_PRIDE['x'], FLAG_PRIDE['y'], FLAG_PRIDE['z']), -0.35)
 
 
 def whiteboard(pal):
@@ -365,7 +365,7 @@ def whiteboard(pal):
     back = box('whiteboard_back', (wb['w'], wb['h'], 0.008), (0, 0, 0.004), pal['plastic_white'])
     tray = box('whiteboard_tray', (wb['w'] * 0.5, 0.012, 0.05), (0, -wb['h'] / 2 - 0.03, 0.03), pal['whiteboard_frame'], bevel=0.002)
     body = join('whiteboard_body', [frame, back, tray])
-    surface = plane('whiteboard_surface', (wb['w'], wb['h']), (0, 0, 0.0095), normal='z', mat=pal['plastic_white'], col='live')
+    surface = plane('whiteboard_surface', (wb['w'], wb['h']), (0, 0, 0.0095), normal='z', mat=pal['board'], col='live')
     g = group('whiteboard', [body, surface], (wb['x'], wb['y'], wb['z']), math.pi / 2)
     hitbox('whiteboard', (0.1, wb['h'] + 0.1, wb['w'] + 0.1), (wb['x'] + 0.05, wb['y'], wb['z']))
     anchor('whiteboard', (wb['x'] + 0.012, wb['y'], wb['z']), look=(1, 0, 0), width=wb['w'], height=wb['h'])

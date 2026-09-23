@@ -298,7 +298,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     let wantOffset = 0;
     if (width > 900) {
       if (station) wantOffset = width * 0.2;
-      else if (spineP < PICKABLE_UNTIL) wantOffset = -width * 0.16 * (1 - spineP / PICKABLE_UNTIL);
+      else if (spineP < PICKABLE_UNTIL) wantOffset = -width * 0.24 * (1 - spineP / PICKABLE_UNTIL);
     }
     cur.offset += (wantOffset - cur.offset) * k;
 

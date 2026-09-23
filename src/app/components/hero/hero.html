@@ -43,17 +43,28 @@
             </span>
             <span class="term__title">joshua&#64;t-c:~</span>
           </div>
-          <div class="term__screen">
-            @for (line of terminalLines; track $index; let last = $last) {
-              <div class="term__line">
-                @if (line.prompt) {
-                  <span class="term__prompt">{{ line.prompt }}</span>
-                }
-                <span class="term__text">{{ line.prompt ? ' ' + line.text : line.text }}</span>
-                @if (last) {
-                  <span class="term__caret"></span>
-                }
-              </div>
+          <div class="term__screen" [class.is-typing]="typed() !== null">
+            @if (typed(); as t) {
+              @for (line of t.lines; track $index; let i = $index) {
+                <div class="term__line">
+                  <span class="term__prompt">{{ line.prompt }}</span><span class="term__text">{{ line.text }}</span>
+                  @if (i === t.caretLine) {
+                    <span class="term__caret"></span>
+                  }
+                </div>
+              }
+            } @else {
+              @for (line of terminalLines; track $index; let last = $last) {
+                <div class="term__line">
+                  @if (line.prompt) {
+                    <span class="term__prompt">{{ line.prompt }}</span>
+                  }
+                  <span class="term__text">{{ line.prompt ? ' ' + line.text : line.text }}</span>
+                  @if (last) {
+                    <span class="term__caret"></span>
+                  }
+                </div>
+              }
             }
           </div>
         </div>

@@ -322,10 +322,11 @@ a:hover {
 }
 
 .intro__stage {
-  min-height: calc(100svh - var(--header-h));
+  min-height: 100svh;
   display: grid;
   align-items: center;
-  padding: var(--sp-5) var(--sp-3);
+  /* the header is fixed: clear it */
+  padding: calc(var(--header-h) + var(--sp-4)) var(--sp-3) var(--sp-5);
 }
 
 .intro__inner {
@@ -380,9 +381,27 @@ a:hover {
 }
 
 :root[data-render='3d'] .intro__inner {
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   opacity: var(--intro-fade, 1);
   visibility: var(--intro-visibility, visible);
+}
+
+/* In the 3D tiers the name and the station list sit in one solid pane on
+   the left; the camera frames the room to the right of it, so no text
+   lies over a prop. */
+:root[data-render='3d'] .intro__panel {
+  align-self: start;
+  width: min(23rem, 100%);
+  padding: var(--sp-3);
+  background: rgba(7, 10, 8, 0.92);
+  border: 1px solid var(--hairline);
+  pointer-events: auto;
+}
+
+:root[data-render='3d'] .intro__panel .stations {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--hairline);
 }
 
 :root[data-station] .intro__inner {
@@ -395,14 +414,8 @@ a:hover {
   overflow: hidden;
 }
 
-:root[data-render='3d'] .intro__plate,
-:root[data-render='3d'] .stations,
 :root[data-render='3d'] .intro__cue {
   pointer-events: auto;
-}
-
-:root[data-render='3d'] .stations {
-  align-self: end;
 }
 
 :root[data-render='3d'] .hero-visual {
@@ -421,7 +434,7 @@ a:hover {
 .hero-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(3rem, 9vw, 6rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   line-height: 0.98;
   letter-spacing: -0.03em;
   max-width: 12ch;
@@ -432,8 +445,18 @@ a:hover {
 }
 
 :root[data-render='3d'] .hero-lede {
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  margin-top: var(--sp-2);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+:root[data-render='3d'] .hero-meta {
+  margin-top: var(--sp-2);
+  font-size: 0.8125rem;
+}
+
+:root[data-render='3d'] .station-link {
+  min-height: 36px;
 }
 
 :root[data-render='3d'] .station-link {
@@ -454,8 +477,28 @@ a:hover {
   }
 
   :root[data-render='3d'] .hero-lede,
-  :root[data-render='3d'] .hero-meta {
+  :root[data-render='3d'] .hero-meta,
+  :root[data-render='3d'] .station-link__what,
+  :root[data-render='3d'] .intro__cmd,
+  :root[data-render='3d'] .stations__head {
     display: none;
+  }
+
+  :root[data-render='3d'] .hero-name {
+    font-size: 1.75rem;
+  }
+
+  :root[data-render='3d'] .stations__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  :root[data-render='3d'] .station-link {
+    width: auto;
+    grid-template-columns: auto auto;
+    gap: 6px;
+    border: 1px solid var(--hairline);
   }
 }
 
@@ -497,6 +540,7 @@ a:hover {
 
 .stations__list {
   list-style: none;
+  padding: 0;
   display: grid;
   gap: 2px;
   max-width: 34rem;
@@ -506,10 +550,10 @@ a:hover {
   width: 100%;
   min-height: var(--btn-min);
   display: grid;
-  grid-template-columns: 3ch 11ch minmax(0, 1fr);
+  grid-template-columns: 3ch 10ch minmax(0, 1fr);
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-1);
+  padding: 4px var(--sp-1);
   font: inherit;
   font-family: var(--font-mono);
   font-size: 0.9375rem;
@@ -531,9 +575,7 @@ a:hover {
 }
 
 .station-link__what {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 /* inverse video on hover/focus: the phosphor fills the row */
@@ -823,16 +865,10 @@ html.js .term__screen.is-typing {
 /* ---- About ---- */
 
 /* ---- Contact ---- */
-
-/* Tall enough that its top reaches the page's center band (45-55% viewport
-   height) when the page is scrolled to the end — the band is what drives
-   the 3D screen, and the screen must show the GitHub handle where the
-   page ends. At any viewport height the top lands at 0.3vh minus the
-   footer, which is inside or above the band. */
+/* The last section fills the viewport, so the final prompt and cursor sit
+   at the end of the session with the footer below. */
 #contact {
-  min-height: 70vh;
-  display: grid;
-  place-items: center;
+  min-height: calc(100svh - var(--header-h) - 6rem);
 }
 
 /* ---- Footer ---- */
@@ -1334,6 +1370,7 @@ html.js .term__screen.is-typing {
 
 .tty__ls {
   list-style: none;
+  padding: 0;
   margin-top: var(--sp-1);
 }
 
@@ -1374,8 +1411,8 @@ html.js .term__screen.is-typing {
   white-space: normal;
 }
 
-.tty__on th,
-.tty__on td {
+.tty__table .tty__on th,
+.tty__table .tty__on td {
   color: #031006;
   background: var(--phosphor);
   text-shadow: none;
@@ -1509,4 +1546,26 @@ html.js .term__screen.is-typing {
 .nav-num {
   color: var(--ink-faint);
   margin-right: 0.15em;
+}
+
+@media (max-width: 720px) {
+  /* phones: the nav drops its window numbers and tightens so all four fit */
+  .nav-num {
+    display: none;
+  }
+
+  .site-nav {
+    gap: 0;
+    font-size: 0.8125rem;
+  }
+
+  .site-nav a {
+    padding: 0 6px;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  .brand {
+    white-space: nowrap;
+  }
 }

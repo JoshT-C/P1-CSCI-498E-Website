@@ -282,6 +282,9 @@ def palette():
         'whiteboard_frame': solid('wb_frame', '#b8bab6', 0.3, 1.0),
         'mic_silver': solid('mic_silver', '#a9aaa8', 0.28, 1.0),
         'perforated': perforated(),
+        # plain (no grain node) so the export can hang a UV carrier on them
+        'tape': solid('tape_paper', '#e8e2cf', 0.6),
+        'board': solid('board_white', '#eef0ec', 0.25),
         'cable_yellow': solid('cable_yellow', '#b8a24a', 0.3),
         # light sources (screens glow in the bake; LEDs are tiny emitters)
         'screen_blue': emissive('screen_blue', '#1e3150', 2.2),

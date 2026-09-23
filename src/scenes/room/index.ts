@@ -50,6 +50,31 @@ export const ROOM_URL: Record<Tier, string> = {
 const SCREEN_GAIN = 1.1;
 const LIT_BY_SCREENS = new THREE.Color(0.2, 0.22, 0.27);
 
+/**
+ * Make V increase upward on a live plane, so an ordinary (flipY) canvas
+ * texture reads right way up. Planes arrive from the export with either
+ * orientation depending on how they were built, so this measures instead
+ * of assuming: compare V at the plane's highest and lowest vertex in world
+ * space, and flip only when the top samples the lower V.
+ */
+function orientUp(mesh: THREE.Mesh): void {
+  const uv = mesh.geometry.getAttribute('uv') as THREE.BufferAttribute | undefined;
+  const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+  if (!uv) return;
+  mesh.updateWorldMatrix(true, false);
+  const v = new THREE.Vector3();
+  let top = { y: -Infinity, v: 0 };
+  let bottom = { y: Infinity, v: 0 };
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+    if (v.y > top.y) top = { y: v.y, v: uv.getY(i) };
+    if (v.y < bottom.y) bottom = { y: v.y, v: uv.getY(i) };
+  }
+  if (top.v >= bottom.v) return;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+  uv.needsUpdate = true;
+}
+
 function canvasTexture(canvas: HTMLCanvasElement, bag: Bag, anisotropy = 4): THREE.CanvasTexture {
   const tex = bag.add(new THREE.CanvasTexture(canvas));
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -104,16 +129,20 @@ export async function loadRoom(tier: Tier, screenSource: THREE.Texture, signal: 
       mesh.userData['station'] = mesh.userData['station'] ?? name.slice(4).split('_')[0];
       hitboxes.push(mesh);
     } else if (name === 'crt_glass') {
+      orientUp(mesh);
       glass = createGlassMaterial(persistence.texture, TEXTURE_W, TEXTURE_H);
       swap(glass);
     } else if (name in screens) {
+      orientUp(mesh);
       const tex = canvasTexture(screens[name](), bag);
       swap(new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: new THREE.Color(SCREEN_GAIN, SCREEN_GAIN, SCREEN_GAIN) }));
     } else if (name === 'whiteboard_surface') {
+      orientUp(mesh);
       boardTex = canvasTexture(paintWhiteboard({ kind: 'models' }), bag, 8);
       boardView = 'models';
       swap(new THREE.MeshBasicMaterial({ map: boardTex, color: LIT_BY_SCREENS, toneMapped: false }));
     } else if (name.startsWith('tape_')) {
+      orientUp(mesh);
       const text = String(mesh.userData['label'] ?? '');
       const tex = canvasTexture(paintLabel(text), bag);
       swap(new THREE.MeshBasicMaterial({ map: tex, color: LIT_BY_SCREENS.clone().multiplyScalar(1.6), toneMapped: false }));

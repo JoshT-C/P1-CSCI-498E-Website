@@ -87,7 +87,7 @@ export class DiagramComponent {
       const [x2, y2] = exitPoint(b, a.x - b.x, a.y - b.y);
       // label beside the line, off along its normal; dashed (return) edges
       // put theirs further along so they do not meet the forward labels
-      const t = e.dashed ? 0.65 : 0.5;
+      const t = e.dashed ? 0.3 : 0.5;
       const len = Math.hypot(x2 - x1, y2 - y1) || 1;
       const lx = x1 + (x2 - x1) * t - ((y2 - y1) / len) * 10 + 4;
       const ly = y1 + (y2 - y1) * t + ((x2 - x1) / len) * 10;

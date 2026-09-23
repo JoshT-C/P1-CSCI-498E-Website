@@ -51,8 +51,9 @@ WHITEBOARD = dict(x=ROOM['left_x'] + 0.012, y=1.6, z=-0.05, w=1.0, h=0.6)
 # stands the disks in two rows of three.
 FLOPPY_CUBBY = dict(x=ROOM['left_x'] + 0.13, y=HUTCH['shelf_y'] + 0.009, z=-0.81, riser_h=0.06, riser_d=0.1)
 FLAG_BLUE = dict(x=-0.2, y=1.8, z=ROOM['back_z'] + 0.01, w=1.35, h=0.84)
-# Clipped to the hutch's front end post (x = left wall + depth - 15 mm).
-FLAG_PRIDE = dict(x=ROOM['left_x'] + HUTCH['depth'] + 0.01, y=1.36, z=HUTCH['z1'] - 0.012)
+# Clipped to the hutch's corner post, flying out over the desk (clear of
+# the whiteboard and the cubbies).
+FLAG_PRIDE = dict(x=ROOM['left_x'] + HUTCH['depth'] + 0.01, y=1.36, z=HUTCH['z0'] + 0.012)
 SIDE_SHELF = dict(x=ROOM['left_x'] + 0.22, z=-0.2)
 
 # The camera's doorway.

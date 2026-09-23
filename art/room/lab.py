@@ -30,7 +30,7 @@ RH = 0.71          # height (≈15U with base and top)
 def _label_tape(pal, name, text, w, at):
     """Label-maker tape stuck on a front face (facing +z before the group
     turns it). The runtime prints `label` onto it; the bake sees a strip."""
-    tape = lib.plane(name, (w, 0.012), at, normal='z', mat=pal['plastic_white'], col='live')
+    tape = lib.plane(name, (w, 0.012), at, normal='z', mat=pal['tape'], col='live')
     tape['label'] = text
     return tape
 
