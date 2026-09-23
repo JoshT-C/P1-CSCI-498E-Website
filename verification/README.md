@@ -27,8 +27,10 @@ Evidence that the site works and is clean.
 ## What the audit checks
 
 `scripts/audit-browser.mjs`, four passes in headless Firefox; every pass
-also fails on uncaught exceptions, console errors, failed requests,
-HTTP >= 400 and CSP violations.
+also fails on uncaught exceptions, anything in the console (errors,
+warnings, logs), failed requests, HTTP >= 400 and CSP violations. The
+full Playwright suite (`e2e/`, `npm run e2e`) goes much further; this
+audit is the quick pass that also takes the screenshots.
 
 1. **Desktop, 3D.** The session never shows over the room while the page
    loads. A station opens its panel, the page cannot scroll under it, and
@@ -57,7 +59,7 @@ npm run audit          # audit-dist, then audit-browser; rewrites the screenshot
 ```
 
 `audit-browser` exits non-zero if any check fails, so a green run is what
-the screenshots were taken from (43/43 at the time of writing).
+the screenshots were taken from (46/46 at the time of writing).
 `AUDIT_BROWSER=chromium` runs it in Chromium instead; in this project's
 environment headless Chromium cannot draw text glyphs, so its screenshots
 show blank text where the page has copy. That is the test browser, not the
