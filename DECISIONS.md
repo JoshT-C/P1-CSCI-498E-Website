@@ -14,21 +14,9 @@ Delete these instructions when you are done, or leave them. It does not matter.
 What you wanted at the start, and what is actually live now.
 Name one thing you dropped or added along the way, and why.
 
-I wanted a personal site that looked like something I would actually run, not a
-template. The first pass shipped as a "refined minimal" page — cream background,
-serif display type, oxblood accents — with copy written in a generic AI voice. I
-rejected both the look and the writing. So I rebuilt it around my own terminal
-identity: a dark phosphor palette, monospace type throughout, and a 3D CRT
-terminal fixed behind every section. The camera dollies from a wide shot into a
-screen close-up as you scroll, and the phosphor screen's typed output mirrors
-whatever section is in view (`cat /etc/whoami` at the top, `ls ~/projects` in
-Work, the GitHub handle at the bottom).
+What I wanted to build was a direct upgrade from my previous github.io site, before this class I had already created a site that was deployed to github using github actions and CLI using Angular 22, I wanted to migrate to a higher quality, production ready site that I could deploy on my personal home lab. This means that some security choices needed to be made. I first decided to have the application deployed within a unprivileged docker container on my Proxmox server, using NGINX as the webserver and NGINX Proxy Manager to manage the routing for my application and lets encrypt for certificates. I wanted to implement some 3d elements into my website this time so I created a dedicated sub-agent on my local RAG pipeline integrating a Blender MCP tool to allow for these to be integrated into the design process. I decided to stick with Angular 22 as my framework since I am already familiar with its fundamentals and the Material library for assets is comprehensive and free to use. 
 
-What changed: I dropped the cream/serif aesthetic and its copy wholesale — that
-was the first thing I rejected — and I added the 3D scene the brief promised from
-the start but the first pass never built. I also added an automated security and
-browser-console audit, because the site runs on my own hardware and I want it to
-be verifiably clean, not just "looks fine."
+I also wanted to use this assignment as an opportunity to test Claude Codes capabilities as a harness for orchestrating local models, the models I chose to test within this were Qwen 3.8 27b and Qwen 3.8 Flash-Next.
 
 ---
 
@@ -42,19 +30,7 @@ Say which you picked, what the alternative was, and what you gave up by not taki
 
 "There was no alternative" is not an answer. Find the fork.
 
-Make the 3D scene a progressive enhancement with a fully designed CSS fallback,
-or make 3D a hard requirement. I picked the first. The site runs a capability
-gate: if WebGL is unavailable, the context is lost, the runtime falls under the
-frame budget, or the lazy-loaded scene chunk fails to download, it downgrades to
-the CSS page — and that CSS page is a real design, not a degraded afterthought
-(the hero terminal card runs the same typed-terminal engine, and the stack bars
-still animate). The alternative was simpler to reason about: one render path, and
-if the visitor can't do 3D they just get a static page. What I gave up was that
-simplicity. I maintain two render paths that have to stay in lockstep from one
-source of truth — the same line queue drives both the 3D screen texture and the
-DOM card — which is more code and more test surface. I decided it was worth it,
-because "your GPU can't do this, here's a blank page" is not an acceptable
-experience for a personal site.
+I had quite a few forks in the road from the original assignment prompt, with the most notable being the choice to locally host this website instead of on my previous github.io site. As mentioned above I already had a website on my github.io page that well meets the requirements for this assignment, so I decided I wanted to challenge myself through a more comprehensive development stack. This gives me the benefit of having greater control and agency over my hosted website, it also had the impact of introducing higher stakes for ensuring that my website is properly secured. What I gave up in this instance was convenience, I already have a Github actions CICD pipeline that lints my website, runs a suite of 131+ playwright tests and verifies that my deployment pipeline actually renders and deploys to my production repo. For this local stack I would have to re-implement this stack, locally hosting a Gitlab instance, setting up API keys, recreating my deployment pipeline, writing new docker compose files, and routing traffic correctly through NGINX Proxy Manager, Cloudflare so that my website is actually served properly. What I gain however is a hardening of many of the DevOps skills I have already learned in industry, and this allows for me to add proper backend / OAuth2 implementations later down the line utilizing backend frameworks like Springboot or FastAPI.
 
 ---
 
@@ -68,7 +44,9 @@ If it genuinely never happened, say so plainly, and then say what you would have
 check in order to notice. Being honest here costs you far less than a story you cannot
 defend when you record your video.
 
-1. One immediate item I had to correct for my agent, ran locally using the Claude Code Harness was to instruct it to avoid spawning more than one sub-agent at a time, as it tried spawning multiple at once from the start causing a system resource crash.
+Qwen 3.8 27b has a nasty tendency to implement CSRF vulnerabilities into its JS React code, and will hallucinate these vulnerabilities as security fixes. This is obviously unacceptable. The way I fixed this behavior was by utilizing the Chrome Dev MCP tools and the built-in Angular linter as a deterministic quality gate, if the model produces code that does not pass the quality gate upon compile or runtime the model will fail this deterministic quality gate and be forced to rewrite the code until it passes. Within this deterministic quality gate I also implemented a research agent that would research the particular vulnerability that the quality gate identified and then pass through suggested revisions to reduce the number of iterations needed to resolve these types of security vulnerabilities.
+
+Higher-Tier Cloud models did not have as many obvious issues, but Opus 5 did introduce a DDOS vulnerability through improperly placed rate limits on the NGINX Webserver config and improperly supplied firewall rules, rather than dropping incoming connections from a certain IP after a certain number of requests in a second it chose to instead provide an HTTP 401, which still takes up network bandwidth and still returns data to the malicious client (essentially still telling a malicious client that a server is still at this location). This issue was diagnosed through my Qwen 3.8 Flash-Next cybersecurity test harness. I resolved this by manually writing the security policies for the website as after these two issues I did not trust these agents to properly implement the CIPS compliance level I was aiming for.
 
 ---
 
@@ -81,29 +59,7 @@ A check that could not have failed is not a check.
 
 Link to your `verification/` folder.
 
-I run `npm run audit`, which does two things. `audit-dist` walks the built bundle
-and fails if it finds an internal hostname, a private IP, a bare port, or a
-credential-shaped string — the site must not leak my homelab. `audit-browser`
-boots the site in a real headless Chromium and fails on anything a visitor would
-feel: console errors, uncaught exceptions, failed requests, HTTP 400 or above,
-CSP violations. It then scrolls through all five sections and asserts that the 3D
-screen is mirroring the section in view at each stop. It currently reports
-21/21 checks passing.
-
-What would have made it fail: the 3D scene originally crashed on startup with an
-Angular injection error — the scene code called `inject()` from a dynamic-import
-callback, which is outside a valid injection context — and it silently downgraded
-to the CSS page. The "render mode is 3d" check caught that, and the "screen
-mirrors X" checks would have caught a section observer that never fired. A
-hostname leaking into the bundle fails `audit-dist`. A bad origin trips a CSP
-violation in the browser pass.
-
-One honest caveat. The headless environment I run this in cannot rasterize text
-glyphs at all — a trivial test page renders blank text there. So the automated
-pipeline verifies that the text is present and visible in the DOM and that the
-fonts are valid self-hosted files, but it cannot pixel-verify that the glyphs
-actually draw. That final visual check has to happen in a real browser, against
-the deployed site. See `verification/`.
+My primary form of verification was done through Playwright and Spec based unit tests. Along with personal visual inspection. For security I utilize a locally hosted abliterated version of Qwen 3.8 Flash-Next to diagnose potential vulnerabilities within my website. The Abiliterated Version of Qwen 3.8 Flash-Next did escape its sandbox a few times so that is something to consider for future testing...
 
 ---
 
@@ -114,18 +70,5 @@ fully understand.
 
 What would you do next, and how would you find out?
 
-The thing I am least sure of: I have not seen the 3D screen's text rendered on
-real pixels. My automated audit runs in a headless browser that cannot rasterize
-fonts, so I've confirmed the terminal machine is correct (it's unit-tested), that
-the text is present and visible in the DOM, and that the fonts are valid
-self-hosted woff2 — but I have not looked at the actual glyphs drawn on the 3D
-screen in a working browser. Next I would run
-`npm run audit:browser https://jtc.lopyhupis.com` from a machine with a real
-display and working fonts, and compare the screenshots against the expected
-hero/work/stack frames. If the text is still blank there, the bug is in the site
-(the CanvasTexture upload path) and I would instrument that. If it renders, the
-earlier blank was purely the test environment.
+I initially tried started this project using Qwen 3.8 27b with Claude Code as the Harness, migrating then to Qwen 3.8 Flash-Next, and then Finally Claude Opus/Fable Models (Opus 5/5.5, Fable 5.1). The local agents struggled using Claude Code as a harness simply due to the cloud-based assumptions that the Claude Code harness integrates into their application stack, things like the automatic classifier and sub-agents would not operate properly due to resource limitations on the hosted system. I was able to resolve these issues by adding a buffer queue and agent depth limitations. T way that I would resolve this in the future would be to leverage other locally hosted compute within my homelab to act as separate model servers to allow for parallel operation between the orchestrating agent and the called sub-agents. This capability has already been implemented in my other local harnesses (like OpenCode) but the Claude Code Harness has impressed me for single agent workflows on local models and could easily be expanded with my already existing knowledge of multi-agent architectures.
 
-Secondarily: the scene's frame budget (it self-downgrades around 28 fps sustained)
-is a number I have not tuned on a real low-end GPU, so a visitor on integrated
-graphics may hit the downgrade path more often than I expect.
