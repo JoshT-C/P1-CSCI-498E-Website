@@ -9,7 +9,7 @@ export const SITE_META = {
   pronouns: 'any / all',
   status: 'metaphysical exile',
   lede:
-    'Computer science student at the Colorado School of Mines. I run a homelab and the servers for Minecraft at Mines, and I host large language models locally on my own hardware.',
+    'Computer science student at the Colorado School of Mines. I run a homelab and the servers for Minecraft at Mines. On my own hardware I host large language models, RAG pipelines that parse documents with Docling and search the web through SearXNG, and MCP tool servers.',
   stack: ['angular', 'three.js', 'llama.cpp'],
   year: 2026
 } as const;

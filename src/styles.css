@@ -463,6 +463,39 @@ a:hover {
   background: transparent;
 }
 
+/* short laptop screens (768 px and under): the pane has to fit whole,
+   so it starts right under the header and the rows pack closer */
+@media (min-width: 721px) and (max-height: 820px) {
+  :root[data-render='3d'] .intro__stage {
+    /* stick below the header instead of padding past it: the section
+       already starts under the header, so the padding cleared it twice */
+    top: var(--header-h);
+    height: calc(100svh - var(--header-h));
+    padding-top: var(--sp-2);
+    padding-bottom: var(--sp-2);
+  }
+
+  :root[data-render='3d'] .intro__panel {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  :root[data-render='3d'] .hero-name {
+    font-size: 1.875rem;
+  }
+
+  :root[data-render='3d'] .hero-lede {
+    line-height: 1.45;
+  }
+
+  :root[data-render='3d'] .intro__panel .stations {
+    margin-top: var(--sp-2);
+  }
+
+  :root[data-render='3d'] .station-link {
+    min-height: 30px;
+  }
+}
+
 @media (max-width: 720px) {
   /* phones: the pane docks to the bottom, the room shows above it */
   :root[data-render='3d'] .intro__inner {
