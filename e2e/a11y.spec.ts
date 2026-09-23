@@ -2,13 +2,15 @@
 import { test, expect } from './support';
 
 test.describe('accessibility', () => {
-  test('landmarks, one h1, and a working skip link', async ({ site, page }) => {
+  test('landmarks, one h1, and a working skip link', async ({ site, page, browserName }) => {
     await site.open({ tier: 'css' });
+    // Safari on macOS tabs to links only with Option held (its default)
+    const tab = browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab';
     await expect(page.getByRole('banner')).toHaveCount(1);
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(tab);
     await expect(page.locator('.skip-link')).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();

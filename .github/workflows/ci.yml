@@ -3,8 +3,9 @@
 #   quality    lint, type-check, unit tests, build, bundle audit, dependency
 #              audit, shellcheck; hands the build to the jobs below
 #   e2e        the Playwright suite (with and without WebGL, desktop and
-#              phone) on Linux (Chromium, Firefox, WebKit), macOS (WebKit,
-#              Chromium, Firefox) and Windows (Edge, Chromium, Firefox)
+#              phone) on Linux (Chromium, Firefox, WebKit), macOS (WebKit:
+#              Safari's engine) and Windows (Edge, Firefox). macOS runners
+#              are slow enough that three engines there hit the job limit.
 #   container  the Docker image as deployed: read-only, no capabilities,
 #              non-root; the suite runs against its nginx, headers included
 #   installer  the Proxmox helper end to end in a Debian 13 container
@@ -66,7 +67,7 @@ jobs:
   e2e:
     name: E2E (${{ matrix.os }})
     needs: quality
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -75,11 +76,11 @@ jobs:
             browsers: chromium,firefox,webkit
             install: --with-deps chromium firefox webkit
           - os: macos-latest
-            browsers: webkit,chromium,firefox
-            install: chromium firefox webkit
+            browsers: webkit
+            install: webkit
           - os: windows-latest
-            browsers: edge,chromium,firefox
-            install: chromium firefox # Edge is on the runner already
+            browsers: edge,firefox
+            install: firefox # Edge is on the runner already
     runs-on: ${{ matrix.os }}
     defaults:
       run:

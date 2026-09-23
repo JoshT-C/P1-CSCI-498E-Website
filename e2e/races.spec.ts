@@ -205,7 +205,11 @@ test.describe('states production should not reach', () => {
     await expect(page.locator('.boot')).toHaveCount(0, { timeout: t(2_000) });
   });
 
-  test('a link clicked before the app has started still works once it has', async ({ site, page }) => {
+  test('a link clicked before the app has started still works once it has', async ({ site, page, browserName }) => {
+    test.skip(
+      browserName === 'webkit' && process.platform === 'darwin',
+      'Safari on macOS does not make the link clickable while the bundle is held: a visitor cannot click it early either'
+    );
     // hold the app's bundle back, click the server-rendered link, let go
     let release!: () => void;
     const held = new Promise<void>(r => (release = r));

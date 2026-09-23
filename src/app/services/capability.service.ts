@@ -104,12 +104,17 @@ export class CapabilityService {
 
     const params = new URLSearchParams(w.location.search);
     this.debug = params.has('debug');
-    const forced = params.get('tier');
+    const forced = isTier(params.get('tier')) ? (params.get('tier') as Tier) : null;
+    const no3d = params.has('no3d');
+    const reducedMotion = w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // The WebGL probe creates a context, so it runs only when the answer
+    // can matter (decideTier settles these three first): a flat page then
+    // makes no GPU context at all.
     const probe: CapabilityProbe = {
-      forced: isTier(forced) ? forced : null,
-      no3d: params.has('no3d'),
-      reducedMotion: w.matchMedia('(prefers-reduced-motion: reduce)').matches,
-      webgl: this.hasWebgl(),
+      forced,
+      no3d,
+      reducedMotion,
+      webgl: forced || no3d || reducedMotion ? false : this.hasWebgl(),
       mobile: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) && w.matchMedia('(pointer: coarse)').matches,
       deviceMemory: (navigator as NavigatorWithHints).deviceMemory,
       hardwareConcurrency: navigator.hardwareConcurrency
