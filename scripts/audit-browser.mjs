@@ -29,7 +29,7 @@
  * No URL given: uses http://localhost:4200 if something is serving there,
  * otherwise serves dist/jtc-site/browser on a free port itself (run
  * `npm run build` first). AUDIT_BROWSER=chromium switches from Firefox.
- * Exits non-zero on any failure. Screenshots land in verification/.
+ * Exits non-zero on any failure. Screenshots land in docs/audit/.
  */
 import { chromium, firefox } from 'playwright';
 import { join, dirname } from 'node:path';
@@ -38,7 +38,7 @@ import { mkdirSync } from 'node:fs';
 import { serveDist } from './serve-dist.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const VERIFICATION = join(ROOT, 'verification');
+const VERIFICATION = join(ROOT, 'docs', 'audit');
 const EMAIL = 'joshua_t-c@outlook.com';
 const SECTION_IDS = ['work', 'stack', 'about', 'contact'];
 

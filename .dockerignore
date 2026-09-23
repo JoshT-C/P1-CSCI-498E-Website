@@ -9,6 +9,7 @@ coverage
 .env
 *.log
 verification
+docs
 deploy/RUNBOOK.md
 README.md
 RESOURCES.md

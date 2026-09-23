@@ -1,79 +1,41 @@
-# fetch.txt — provenance for the About copy
+HTTP/2 200 
+date: Wed, 23 Sep 2026 07:14:22 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+last-modified: Wed, 23 Sep 2026 07:06:50 GMT
+vary: Accept-Encoding
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=1WC9g3ZVqd5fleEvY44vogJetiOrdWcL8ArwPlZlGjjQDEBXXxG5SsTORVt9V9G%2BikxzY9Zxz7cdQXxXAlNpaPLMxEx4RsBS57Slev%2FPBzZVuoQGjRCGslACFRW25bJT9stEug%3D%3D"}]}
+cache-control: no-cache
+strict-transport-security: max-age=63072000; includeSubDomains
+x-content-type-options: nosniff
+x-frame-options: DENY
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()
+cross-origin-opener-policy: same-origin
+cross-origin-resource-policy: same-origin
+x-permitted-cross-domain-policies: none
+content-security-policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' blob: https://api.github.com; manifest-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; require-trusted-types-for 'script'; trusted-types angular angular#bundler
+x-served-by: jtc.lopyhupis.com
+cf-cache-status: DYNAMIC
+cf-ray: a3f7c08cdc9fe749-DEN
+alt-svc: h3=":443"; ma=86400
 
-Source:  https://github.com/JoshT-C  (public GitHub profile README)
-Raw URL: https://raw.githubusercontent.com/JoshT-C/JoshT-C/main/README.md
-Fetched: 2026-09-22 (initial fetch 2026-09-21)
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="utf-8">
+  <title>Home · Joshua T-C</title>
+  <base href="/">
+  <meta name="description" content="Joshua T-C, computer science student at the Colorado School of Mines. Runs a homelab and the servers for Minecraft at Mines, and self-hosts large language models, RAG pipelines and MCP tool servers.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, minimum-scale=0.25, user-scalable=yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#0b0c0a">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="styles-P7RNO66F.css"></head>
+<body><!--nghm-->
+  <app-root ng-version="22.1.7" ngh="5" ng-server-context="ssg"><a href="#main-content" class="skip-link">Skip to content</a><app-scene-canvas aria-hidden="true" ngh="0"><div class="scene-host"></div></app-scene-canvas><app-header ngh="0"><header class="site-header"><div class="site-header-inner"><a href="#top" class="brand">Joshua T-C</a><nav aria-label="Sections" class="site-nav"><a href="#work"><span aria-hidden="true" class="nav-num">0:</span>work</a><a href="#stack"><span aria-hidden="true" class="nav-num">1:</span>ai-stack</a><a href="#about"><span aria-hidden="true" class="nav-num">2:</span>about</a><a href="#contact"><span aria-hidden="true" class="nav-num">3:</span>contact</a></nav></div></header></app-header><main id="main-content" tabindex="-1"><router-outlet></router-outlet><app-home ngh="0"><app-hero ngh="1"><section id="top" aria-label="Introduction" class="intro"><div class="intro__stage"><div class="section-inner intro__inner"><div class="intro__panel"><div class="intro__plate"><p aria-hidden="true" class="mono intro__cmd">$ cat /etc/whoami</p><h1 class="hero-name"> Joshua <span class="accent">T-C</span></h1><p class="lede hero-lede">Computer science student at the Colorado School of Mines. I run a homelab and the servers for Minecraft at Mines. On my own hardware I host large language models, RAG pipelines that parse documents with Docling and search the web through SearXNG, and MCP tool servers.</p><dl class="hero-meta"><div><dt>pronouns</dt><dd>any / all</dd></div><div><dt>status</dt><dd>metaphysical exile</dd></div><div><dt>stack</dt><dd>angular · three.js · llama.cpp</dd></div></dl></div><nav aria-label="The room" class="stations"><p aria-hidden="true" class="stations__head mono">$ ls ~/room</p><ul class="stations__list"><li><button type="button" class="station-link" aria-pressed="false"><span aria-hidden="true" class="station-link__key">01</span><span class="station-link__name">terminal</span><span class="station-link__what">log in and read</span></button></li><li><button type="button" class="station-link" aria-pressed="false"><span aria-hidden="true" class="station-link__key">02</span><span class="station-link__name">rack</span><span class="station-link__what">machines, models</span></button></li><li><button type="button" class="station-link" aria-pressed="false"><span aria-hidden="true" class="station-link__key">03</span><span class="station-link__name">floppies</span><span class="station-link__what">more projects</span></button></li><li><button type="button" class="station-link" aria-pressed="false"><span aria-hidden="true" class="station-link__key">04</span><span class="station-link__name">whiteboard</span><span class="station-link__what">diagrams</span></button></li><li><button type="button" class="station-link" aria-pressed="false"><span aria-hidden="true" class="station-link__key">05</span><span class="station-link__name">laptop</span><span class="station-link__what">second machine</span></button></li><!----></ul></nav></div><div class="hero-visual"><div aria-hidden="true" class="term"><div class="term__chrome"><span class="term__dots"><span class="term__dot term__dot--on"></span><span class="term__dot"></span><span class="term__dot"></span></span><span class="term__title">joshua@t-c:~</span></div><div class="term__screen"><!----><div class="term__line"><span class="term__prompt">joshua@t-c:~$</span><!----><span class="term__text"> cat /etc/whoami</span><!----></div><div class="term__line"><!----><span class="term__text">Joshua T-C</span><!----></div><div class="term__line"><span class="term__prompt">joshua@t-c:~$</span><!----><span class="term__text"> cat /etc/pronouns</span><!----></div><div class="term__line"><!----><span class="term__text">any / all</span><!----></div><div class="term__line"><span class="term__prompt">joshua@t-c:~$</span><!----><span class="term__text"> echo $STATUS</span><!----></div><div class="term__line"><!----><span class="term__text">metaphysical exile</span><span class="term__caret"></span><!----></div><!----><!----></div></div></div><a href="#shell" class="intro__cue mono"><span class="intro__cue-3d">scroll to sit down</span><span class="intro__cue-css">./explore</span><span aria-hidden="true">↓</span></a></div></div></section></app-hero><app-shell ngskiphydration="true"><section id="shell" aria-label="Terminal session" class="tty shell"><div role="log" aria-live="polite" class="shell__log"><div class="tty__inner"><p class="tty__dim">Joshua T-C · guest session · © 2026 · Angular + three.js, self-hosted</p><p class="tty__dim">Type a command, or click one to put it on the prompt.</p><div class="shell__entry" data-entry="0"><p class="tty__cmd"><span class="tty__ps1">guest@t-c:~$</span> help</p><dl class="tty__out shell__help"><div><dt><button type="button" class="tty__button shell__cmd">projects</button></dt><dd>what I have built, and my GitHub repos</dd></div><div><dt><button type="button" class="tty__button shell__cmd">ai-stack</button></dt><dd>the models I host and how fast they run</dd></div><div><dt><button type="button" class="tty__button shell__cmd">about</button></dt><dd>school, the Minecraft servers, work so far</dd></div><div><dt><button type="button" class="tty__button shell__cmd">contact</button></dt><dd>email and GitHub</dd></div><div><dt><button type="button" class="tty__button shell__cmd">whoami</button></dt><dd>name, pronouns, status</dd></div><div><dt><button type="button" class="tty__button shell__cmd">help</button></dt><dd>this list</dd></div><div><dt><button type="button" class="tty__button shell__cmd">clear</button></dt><dd>clear the screen</dd></div><div><dt><button type="button" class="tty__button shell__cmd">exit</button></dt><dd>log out and step back into the room</dd></div><!----></dl><p class="tty__out tty__dim">Tab finishes a command; the up and down arrows recall earlier ones.</p><!----><!----><!----><!----><!----><!----><!----><!----></div><div class="shell__entry" data-entry="1" id="work"><p class="tty__cmd"><span class="tty__ps1">guest@t-c:~$</span> projects</p><!----><app-work><div class="tty__out"><ul class="tty__ls"><li><span class="tty__dim">drwxr-xr-x</span><a rel="noopener" class="tty__link" href="#stack">ai-stack/</a><span>Four language models behind one llama.cpp build.</span></li><li><span class="tty__dim">drwxr-xr-x</span><a rel="noopener" class="tty__link" href="https://josht-c.github.io/projects">previous-site/</a><span>The GitHub Pages version this site replaces.</span></li><!----></ul><p class="tty__sub tty__dim">ai-stack/README</p><p class="tty__bright">Local AI stack</p><p>A llama.cpp server on an RTX 5090 that runs one of four large models at a time. Open WebUI, SearXNG and Docling run beside it. Every service listens only on the loopback interface, so nothing on the machine is reachable from the network.</p><p class="tty__dim">tags: llama.cpp, RTX 5090, local-first</p><p><a class="tty__link" href="#stack">ai-stack: the models and their benchmarks</a></p><p class="tty__sub tty__dim">public repos on github.com/JoshT-C, newest first</p><p role="status" class="tty__dim">fetching from api.github.com<span aria-hidden="true" class="tty__spinner"></span></p><!----><!----><!----></div></app-work><!----><!----><!----><!----><!----><!----><!----></div><div class="shell__entry" data-entry="2" id="stack"><p class="tty__cmd"><span class="tty__ps1">guest@t-c:~$</span> ai-stack</p><!----><!----><app-ai-stack><div class="tty__out"><p class="tty__dim">host thelio: RTX 5090 (32 GB), Ryzen 9 9950X (16 cores), 123 GiB RAM, PCIe 5.0 x16</p><table class="tty__table"><caption class="visually-hidden">Model backends on the Thelio. Speeds are medians of repeated runs; context is the configured window.</caption><thead><tr><th scope="col">backend</th><th scope="col">shape</th><th scope="col">context</th><th scope="col">decode</th><th scope="col">state</th></tr></thead><tbody><tr class="tty__on" aria-current="true"><th scope="row">qwen3.6-35b-a3b</th><td>MoE 35B · 3B active</td><td>262,144</td><td>282 tok/s</td><td>loaded</td></tr><tr class="tty__desc"><td colspan="5">The default for interactive use, and the fastest of the four</td></tr><tr class=""><th scope="row">qwen3.8-27b</th><td>Dense 27B · hybrid attention</td><td>163,840</td><td>113 tok/s</td><td>idle</td></tr><tr class="tty__desc"><td colspan="5">Dense model, used for quality at long context</td></tr><tr class=""><th scope="row">muse-glimmer-30b</th><td>Dense 30B · f16 KV cache</td><td>131,072</td><td>83 tok/s</td><td>idle</td></tr><tr class="tty__desc"><td colspan="5">Uses 21 GB of VRAM, leaving about 11 GB free</td></tr><tr class=""><th scope="row">qwen3.8-flash-next</th><td>MoE 180B · experts in system RAM</td><td>262,144</td><td>27 tok/s</td><td>idle</td></tr><tr class="tty__desc"><td colspan="5">The largest; keeps about 80 GiB of its experts in system RAM</td></tr><!----></tbody></table><p class="tty__sub tty__dim">ai-stack/NOTES</p><div class="tty__prose"><p>The host is a System76 Thelio Mira running Bazzite, with an RTX 5090 (32 GB of VRAM), a 16-core Ryzen 9 9950X and 123 GiB of RAM. All inference runs on this machine.</p><p>The engine is one llama.cpp build compiled from a pinned commit with sm_120 (Blackwell) support, which the packaged builds did not have when the card came out. It serves the Anthropic Messages API, so Claude Code can use a local model directly through `claude --local`.</p><!----><p>Only one of the four backends fits in VRAM at a time. `ai use &lt;model&gt;` stops the running backend, waits until nvidia-smi reports the memory as free, and then starts the next one. A switch therefore never fails halfway through loading.</p><p>Five services run beside the engine: Open WebUI for chat, SearXNG for web search, Docling for document parsing (on the CPU, to keep the GPU free), Tika for text extraction and MCPO for MCP tools over HTTP. Each one listens only on the loopback interface and requires a bearer token.</p></div></div></app-ai-stack><!----><!----><!----><!----><!----><!----></div><div class="shell__entry" data-entry="3" id="about"><p class="tty__cmd"><span class="tty__ps1">guest@t-c:~$</span> about</p><!----><!----><!----><app-about><div class="tty__out tty__prose"><p> I study computer science at the Colorado School of Mines. I have run a homelab since high school: virtual machines, containers and the network under them. </p><p> I am president of Minecraft at Mines, a club of more than 700 members. I designed, built and run its server infrastructure, including a platform that starts game servers on demand, which members use every day. </p><p> In the summers of 2025 and 2026 I worked at Parsons on a microservice platform (Angular, Spring Boot, PostgreSQL). I moved it to Kubernetes, which raised its capacity from 10 concurrent users to 1,000, and put a Keycloak zero-trust gateway in front of it. In spring 2026 I spent six weeks at Kinective building a conversational agent on AWS Bedrock with Claude and MCP tools, and cut its model cost from $12–15 to under $3. </p><p> I keep my own data on hardware I own. This site is Angular and three.js, served by nginx from my own machine with a Let's Encrypt certificate. The source is public on GitHub. </p></div></app-about><!----><!----><!----><!----><!----></div><div class="shell__entry" data-entry="4" id="contact"><p class="tty__cmd"><span class="tty__ps1">guest@t-c:~$</span> contact</p><!----><!----><!----><!----><app-contact><dl class="tty__out tty__kv"><div><dt>email</dt><dd><a href="/cdn-cgi/l/email-protection#6903061a011c08361d440a29061c1d05060602470a0604" class="tty__link"><span class="__cf_email__" data-cfemail="9ff5f0ecf7eafec0ebb2fcdff0eaebf3f0f0f4b1fcf0f2">[email&#160;protected]</span></a></dd></div><div><dt>github</dt><dd><a href="https://github.com/JoshT-C" rel="noopener" class="tty__link">github.com/JoshT-C</a></dd></div></dl></app-contact><!----><!----><!----><!----></div><!----></div></div><form class="shell__prompt"><div class="tty__inner shell__line"><label for="shell-input" class="tty__ps1">guest@t-c:~$</label><input id="shell-input" type="text" name="command" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-describedby="shell-hint" class="shell__input" value=""><span id="shell-hint" class="visually-hidden">Type a command and press Enter. Type help for the list.</span></div></form></section></app-shell></app-home><!----></main><app-station-panel ngh="2"><dialog class="station-panel" aria-labelledby="station-title"><div class="station-panel__inner"><header class="station-panel__head"><button type="button" aria-label="Back to the room" class="station-panel__close"><span aria-hidden="true">←</span> back to room <kbd aria-hidden="true">esc</kbd></button><p aria-hidden="true" class="mono station-panel__cmd"><span class="prompt">joshua@t-c:~$</span> </p><h2 id="station-title" class="station-panel__title"><!--ngetn--></h2></header><!----><!----><!----><!----></div></dialog></app-station-panel><app-hover-label aria-hidden="true" ngh="3"><!----></app-hover-label><div aria-hidden="true" class="crt-overlay"></div><div aria-hidden="true" class="crt-frame"></div><app-boot aria-hidden="true" ngh="4"><!----></app-boot></app-root>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="main-LN5H7V3F.js" type="module"></script>
+<link rel="modulepreload" href="chunk-A5UnQxib.js">
+<link rel="modulepreload" href="chunk-5YL50e0B.js">
 
-Purpose: The About section's copy is derived from this public profile README.
-         This file records the source so it is clear the bio, experience, and
-         skills are the owner's own public words, not invented.
 
-Note:    The profile's contact badges (LinkedIn, email, previous site) are
-         omitted below on purpose. The site's contact output lists the email
-         address and GitHub the owner chose to publish (2026-09-22); it has no
-         LinkedIn link.
-
---- verbatim profile README, contact badges omitted ---
-
-# Joshua Tuominen-Collins
-
-## 💻 Computer Science Student | Colorado School of Mines
-
-[CONTACT BADGES OMITTED — see note above]
-
-I'm a computer science enthusiast who solves problems by building: my own Proxmox homelab, the server infrastructure behind a 600-member student community, and Kubernetes platforms and LLM agents across two internship summers. I like understanding complex systems, from zero-trust authentication to agentic AI, well enough to run them, secure them, and explain them.
-
-## 🎓 Education
-
-**Colorado School of Mines** | B.S. Computer Science (Expected 2027)
-
-- GPA: 3.69
-- Thorson First-Year Honors, McBride Honors Program, Dean's List, Honor Roll
-- Principal French Horn, Mines Orchestra
-
-## 💼 Professional Experience
-
-### Software Engineering Intern | Parsons Corporation
-
-*Summers 2025 & 2026*
-
-- Architected a containerized microservice platform (Angular, Spring Boot, FastAPI, PostgreSQL) and led its migration to Kubernetes, scaling single-node capacity from 10 to 1,000 concurrent users
-- Stood up Keycloak authentication from scratch and implemented a zero-trust edge with OAuth2 Proxy and certificate-based auth
-- Built the Jenkins CI/CD pipeline with cached, parallelized container builds, cutting build times by more than half; wrote a Playwright E2E suite plus 200+ tests
-- Returned in a senior role: authored the team's documentation and migration guides, delivered product demos, and advised senior engineers on Kubernetes and Keycloak adoption
-
-### Software Engineering Field Session (Client Project) | Kinective
-
-*May – Jun 2026*
-
-- On a 4-person team, delivered a conversational AI agent (Claude on AWS Bedrock, MCP tools) that lets non-technical users build business workflows inside Kinective's enterprise low-code platform
-- Designed the system prompt for an automated testing agent that independently re-verifies the workflow agent's end-to-end output
-- Authored the benchmark prompt suite and advised on prompt structure during optimization that cut per-workflow LLM cost from roughly $12–15 to under $3
-
-## 💡 Technical Skills
-
-- **Languages**: Java, Python, C++, C, TypeScript/JavaScript, SQL, Bash, Lua
-- **Backend & Frameworks**: Spring Boot, Angular, FastAPI, Maven, PostgreSQL, MySQL
-- **Infrastructure & DevOps**: Kubernetes, Helm, Docker, Traefik, Nginx, Jenkins, Proxmox, Grafana, Prometheus, Git, Linux
-- **Identity & Security**: Keycloak, OAuth2/OIDC, JWT, OAuth2 Proxy, SSO, zero-trust edge auth
-- **AI/LLM**: Claude (AWS Bedrock), Model Context Protocol (MCP), prompt engineering, agent evaluation
-- **Testing**: Playwright, k6
-
-## 🚀 Leadership & Community
-
-### President & Lead Server Administrator | Minecraft at Mines
-
-*Aug 2023 – Present*
-
-- Lead a 600+ member community and the Proxmox/Ubuntu infrastructure behind it, including a Docker-based platform that provisions on-demand Minecraft servers for students
-- Create, source, and deploy custom Java plugins for community servers
-
-### Vice President of Advocacy | oSTEM at Mines
-
-*Aug 2024 – Present*
-
-- Oversee a 440+ member community Discord and the chapter's advocacy resources; advise Mines DI&A on SafeZONE training
-
----
-
-*I'm passionate about server infrastructure, identity and access management, and building community through technology. Always looking to collaborate; if you're building something interesting, reach out.*
+<script id="ng-state" type="application/json">{"__nghData__":[{},{"t":{"34":"t0","45":"t1","46":"t2"},"c":{"34":[{"i":"t0","r":1,"x":5}],"45":[],"46":[{"i":"t2","r":7,"t":{"1":"t3"},"c":{"1":[{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[{"i":"t4","r":1}],"4":[]}},{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[],"4":[]}},{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[{"i":"t4","r":1}],"4":[]}},{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[],"4":[]}},{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[{"i":"t4","r":1}],"4":[]}},{"i":"t3","r":1,"t":{"1":"t4","4":"t5"},"c":{"1":[],"4":[{"i":"t5","r":1}]}}]}}]}},{"t":{"16":"t6","17":"t7","18":"t8","19":"t9"},"c":{"16":[],"17":[],"18":[],"19":[]}},{"t":{"0":"t10"},"c":{"0":[]}},{"t":{"0":"t11"},"c":{"0":[]}},{"c":{"5":[{"i":"c9527324","r":1}]}}]}</script></body></html>
