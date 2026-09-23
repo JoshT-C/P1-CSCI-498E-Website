@@ -394,6 +394,13 @@ app-shell {
   bottom: 0;
   opacity: 0;
   visibility: hidden;
+}
+
+/* Fades only once the scene has reported (data-portal): switching into
+   3D at load must hide the shell at once. With the fade on from the
+   start, a browser that had styled the page before the switch kept the
+   shell on screen for the fade's half second (Chromium, WebKit). */
+:root[data-render='3d'][data-portal] .shell {
   transition: opacity 450ms ease, visibility 0s linear 450ms;
 }
 

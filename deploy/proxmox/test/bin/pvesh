@@ -1,0 +1,3 @@
+#!/bin/sh
+# Stand-in for the Proxmox command of this name (deploy/proxmox/test/simulate.sh).
+echo "pvesh $*" >> /tmp/pve.log; echo 123

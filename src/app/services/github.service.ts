@@ -36,11 +36,6 @@ export interface ProjectData {
   status: 'active' | 'archived' | 'maintenance';
 }
 
-/** A project's topic tags, without the language its own badge already shows. */
-export function projectTopics(project: ProjectData): string[] {
-  return project.technologies.filter(tech => tech !== project.language);
-}
-
 /**
  * Turns a failed GitHub request into a message that names the problem and
  * what the visitor can do about it. The anonymous API's 60 requests/hour

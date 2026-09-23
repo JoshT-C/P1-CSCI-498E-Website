@@ -3,7 +3,7 @@
  * on the flat page (the shell is the same component there, and loads
  * faster); the 3D group covers going through the glass and back.
  */
-import { test, expect, EMAIL } from './support';
+import { test, expect, EMAIL, t } from './support';
 
 test.describe('shell commands', () => {
   test.beforeEach(async ({ site }) => {
@@ -165,8 +165,8 @@ test.describe('shell through the glass (3D)', () => {
     await site.require3d();
     await site.enterShell();
     await site.run('exit');
-    await expect.poll(async () => (await site.state()).portal, { timeout: 15_000 }).toBe('out');
-    await expect.poll(async () => (await site.state()).scrollY, { timeout: 15_000 }).toBe(0);
+    await expect.poll(async () => (await site.state()).portal, { timeout: t(15_000) }).toBe('out');
+    await expect.poll(async () => (await site.state()).scrollY, { timeout: t(15_000) }).toBe(0);
     expect((await site.state()).focused).not.toBe('shell-input');
   });
 
@@ -189,11 +189,11 @@ test.describe('the one-time login', () => {
     await site.require3d();
     await site.enterShell();
     await expect(page.locator('.boot')).toBeVisible();
-    await expect(page.locator('.boot')).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('.boot')).toHaveCount(0, { timeout: t(10_000) });
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(async () => (await site.state()).portal).toBe('out');
     await site.enterShell();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(t(500));
     await expect(page.locator('.boot')).toHaveCount(0);
   });
 
@@ -203,14 +203,14 @@ test.describe('the one-time login', () => {
     await site.enterShell();
     await expect(page.locator('.boot')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.boot')).toHaveCount(0, { timeout: 2_000 });
+    await expect(page.locator('.boot')).toHaveCount(0, { timeout: t(2_000) });
   });
 
   test('never plays under reduced motion', async ({ site, page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await site.open();
     await site.enterShell();
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(t(800));
     await expect(page.locator('.boot')).toHaveCount(0);
   });
 });

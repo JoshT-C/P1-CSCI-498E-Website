@@ -7,7 +7,7 @@
  * The black-screen guard samples every animation frame: at no point may
  * the page show neither the shell, nor the login, nor the room.
  */
-import { test, expect, type Site } from './support';
+import { test, expect, type Site, t } from './support';
 import type { Page } from '@playwright/test';
 
 /** Start sampling for the black screen; returns a function that stops and
@@ -53,11 +53,9 @@ test.describe('orders of events', () => {
     const stop = await watchForBlack(page);
     await site.run('exit');
     await page.locator('.site-nav a[href="#stack"]').click();
-    await page.waitForTimeout(2500);
-    const s = await site.state();
-    expect(s.commands.at(-1)).toBe('ai-stack');
-    expect(s.portal).toBe('in');
-    expect(s.shellVisible).toBe(true);
+    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('ai-stack');
+    await expect.poll(async () => (await site.state()).portal, { timeout: t(15_000) }).toBe('in');
+    await site.shellShown();
     expect(await stop()).toEqual([]);
   });
 
@@ -66,8 +64,9 @@ test.describe('orders of events', () => {
     await site.enterShell();
     await page.locator('.site-nav a[href="#stack"]').click();
     await page.locator('.site-nav a[href="#about"]').click();
-    await expect.poll(async () => (await site.state()).commands.at(-1)).toBe('about');
-    await page.waitForTimeout(800);
+    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('about');
+    // a window for the dropped command to (wrongly) turn up in
+    await page.waitForTimeout(t(800));
     expect((await site.state()).commands).toEqual(['help', 'about']);
   });
 
@@ -77,27 +76,26 @@ test.describe('orders of events', () => {
     // from the room, twice, then via help, then the README link, then out and back
     const count = async () => (await site.state()).commands.length;
     await page.locator('.site-nav a[href="#stack"]').click();
-    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: 15_000 }).toBe('ai-stack');
+    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('ai-stack');
     await site.shellShown();
     let n = await count();
     await page.locator('.site-nav a[href="#stack"]').click();
-    await expect.poll(count, { timeout: 15_000 }).toBe(n + 1);
+    await expect.poll(count, { timeout: t(15_000) }).toBe(n + 1);
     // the newest help: clicking a scrolled-away entry makes Playwright
     // scroll the page itself, which a reader's click never does
     await site.run('help');
     n = await count();
     await site.lastEntry().locator('.shell__cmd', { hasText: 'ai-stack' }).click();
     await page.keyboard.press('Enter');
-    await expect.poll(count, { timeout: 15_000 }).toBe(n + 1);
+    await expect.poll(count, { timeout: t(15_000) }).toBe(n + 1);
     await site.run('projects');
     await site.lastEntry().getByRole('link', { name: /ai-stack: the models/ }).click();
     await site.run('exit');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(t(300));
     await page.locator('.site-nav a[href="#stack"]').click();
-    await expect.poll(async () => (await site.state()).portal, { timeout: 15_000 }).toBe('in');
-    await page.waitForTimeout(1500);
+    await expect.poll(async () => (await site.state()).portal, { timeout: t(15_000) }).toBe('in');
+    await site.shellShown();
     expect(await stop(), 'frames with nothing on screen').toEqual([]);
-    expect((await site.state()).shellVisible).toBe(true);
   });
 
   test('a station opened by link while in the shell, then closed, returns to the shell', async ({ site, page }) => {
@@ -118,12 +116,11 @@ test.describe('orders of events', () => {
     await page.mouse.move(900, 500);
     for (let i = 0; i < 12; i++) {
       await page.evaluate(i => window.scrollTo(0, i % 2 ? document.documentElement.scrollHeight : document.documentElement.scrollHeight * 0.6), i);
-      await page.waitForTimeout(60);
+      await page.waitForTimeout(t(60));
     }
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect.poll(async () => (await site.state()).portal).toBe('in');
-    await page.waitForTimeout(600);
-    expect((await site.state()).shellVisible).toBe(true);
+    await expect.poll(async () => (await site.state()).portal, { timeout: t(15_000) }).toBe('in');
+    await site.shellShown();
     expect(await stop()).toEqual([]);
   });
 
@@ -141,13 +138,14 @@ test.describe('orders of events', () => {
     ]) {
       for (const command of order) await site.run(command);
       await page.locator('.site-nav a[href="#work"]').click();
-      await expect.poll(async () => (await site.state()).commands.at(-1)).toBe('projects');
-      await page.waitForTimeout(400);
+      await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('projects');
+      // measure once the repo table (and its caption) has rendered
+      await expect(site.lastEntry().locator('.tty__repos')).toBeVisible();
       expect(await end(), order.join(' → ')).toBe(before);
     }
     await page.mouse.move(700, 500);
     await page.mouse.wheel(0, 2000);
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(t(400));
     const bottom = await page.evaluate(() => Math.round(document.getElementById('shell')!.getBoundingClientRect().bottom));
     expect(bottom).toBe(page.viewportSize()!.height);
   });
@@ -164,8 +162,7 @@ test.describe('orders of events', () => {
     await site.enterShell();
     await page.reload();
     await site.sceneStarted();
-    await page.waitForTimeout(1500);
-    expect(await site.somethingOnScreen()).toBe(true);
+    await expect.poll(() => site.somethingOnScreen(), { timeout: t(15_000) }).toBe(true);
   });
 });
 
@@ -180,13 +177,11 @@ test.describe('states production should not reach', () => {
       const gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as WebGLRenderingContext;
       gl.getExtension('WEBGL_lose_context')!.loseContext();
     });
-    await expect.poll(async () => (await site.state()).tier).toBe('desk');
+    await expect.poll(async () => (await site.state()).tier, { timeout: t(20_000) }).toBe('desk');
     await site.sceneStarted();
-    await page.waitForTimeout(1500);
+    await site.shellShown();
     expect(await stop(), 'frames with nothing on screen').toEqual([]);
-    const s = await site.state();
-    expect(s.portal).toBe('in');
-    expect(s.shellVisible).toBe(true);
+    expect((await site.state()).portal).toBe('in');
   });
 
   test('the GPU context is lost in the room: the lighter room takes over', async ({ site, page, guard }) => {
@@ -198,7 +193,7 @@ test.describe('states production should not reach', () => {
       gl.getExtension('WEBGL_lose_context')!.loseContext();
     });
     await expect.poll(async () => (await site.state()).tier).toBe('desk');
-    await expect(page.locator('.scene-host canvas')).toBeAttached({ timeout: 20_000 });
+    await expect(page.locator('.scene-host canvas')).toBeAttached({ timeout: t(20_000) });
   });
 
   test('leaving the glass while the login plays ends the login', async ({ site, page }) => {
@@ -207,7 +202,7 @@ test.describe('states production should not reach', () => {
     await site.enterShell();
     await expect(page.locator('.boot')).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(page.locator('.boot')).toHaveCount(0, { timeout: 2_000 });
+    await expect(page.locator('.boot')).toHaveCount(0, { timeout: t(2_000) });
   });
 
   test('a link clicked before the app has started still works once it has', async ({ site, page }) => {
@@ -227,6 +222,6 @@ test.describe('states production should not reach', () => {
     await page.waitForFunction(() => document.documentElement.dataset['render'] !== undefined);
     // the native jump landed on the server-rendered section; the app then
     // opens the shell on that section
-    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: 15_000 }).toBe('about');
+    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('about');
   });
 });

@@ -2,7 +2,7 @@
  * Getting into the shell: header links, section deep links, links inside
  * output and panels, the terminal station, and the way back out.
  */
-import { test, expect } from './support';
+import { test, expect, t } from './support';
 
 const LINKS = [
   { href: '#work', command: 'projects' },
@@ -17,7 +17,7 @@ test.describe('header links', () => {
       await site.open({ tier: 'room' });
       await site.require3d();
       await page.locator(`.site-nav a[href="${href}"]`).click();
-      await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: 15_000 }).toBe(command);
+      await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe(command);
       await site.shellShown();
       const s = await site.state();
       expect(s.portal).toBe('in');
@@ -65,7 +65,7 @@ test.describe('links inside the site', () => {
     await site.open({ tier: 'room', hash: 'floppies/ai-stack' });
     await page.locator('.station-panel a.prompt-link').click();
     await expect(page.locator('dialog.station-panel')).toBeHidden();
-    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: 15_000 }).toBe('ai-stack');
+    await expect.poll(async () => (await site.state()).commands.at(-1), { timeout: t(15_000) }).toBe('ai-stack');
     await site.shellShown();
   });
 
@@ -73,7 +73,7 @@ test.describe('links inside the site', () => {
     await site.open({ tier: 'room' });
     await site.require3d();
     await page.locator('.station-link', { hasText: 'terminal' }).click();
-    await expect.poll(async () => (await site.state()).portal, { timeout: 15_000 }).toBe('in');
+    await expect.poll(async () => (await site.state()).portal, { timeout: t(15_000) }).toBe('in');
     await site.shellShown();
   });
 
@@ -82,7 +82,7 @@ test.describe('links inside the site', () => {
     await site.require3d();
     await site.enterShell();
     await page.locator('.site-header .brand').click();
-    await expect.poll(async () => (await site.state()).scrollY, { timeout: 15_000 }).toBe(0);
+    await expect.poll(async () => (await site.state()).scrollY, { timeout: t(15_000) }).toBe(0);
     await expect.poll(async () => (await site.state()).portal).toBe('out');
   });
 

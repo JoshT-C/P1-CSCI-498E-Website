@@ -1,0 +1,8 @@
+#!/bin/bash
+# Stand-in for the Proxmox command of this name (deploy/proxmox/test/simulate.sh).
+echo "pct $*" >> /tmp/pve.log
+case "$1" in
+  status) exit 2;;
+  exec) shift 2; [ "$1" = "--" ] && shift; exec "$@";;
+  push) cp "$3" "$4"; chmod 0755 "$4";;
+esac

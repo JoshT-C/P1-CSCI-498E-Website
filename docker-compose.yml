@@ -20,9 +20,8 @@ services:
       - letsencrypt:/etc/nginx/certs:ro
       - certbot-webroot:/var/www/certbot:ro
     read_only: true
+    # nginx.conf keeps its pid and temp files on /tmp, the one writable path
     tmpfs:
-      - /var/cache/nginx
-      - /var/run
       - /tmp
     cap_drop: [ALL]
     security_opt:

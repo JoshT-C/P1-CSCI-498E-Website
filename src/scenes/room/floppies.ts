@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { Bag, hitbox, merge, type Part } from './kit';
 import { anchor } from './layout';
-import { canvas2d } from './textures';
+import { applyUvRect, canvas2d } from './textures';
 import { FLOPPY_PER_ROW, FLOPPY_STRIPES } from '../../app/config/scene.config';
 
 export interface FloppyData {
@@ -84,13 +84,9 @@ export function createFloppies(items: readonly FloppyData[]): Floppies {
 
   const atlas = labelAtlas(items);
   bag.add(atlas.texture);
-  const labelParts = items.map((_, i) => {
-    const g = new THREE.PlaneGeometry(LABEL.w, LABEL.h);
-    const uv = g.getAttribute('uv') as THREE.BufferAttribute;
-    const [u0, v0, u1, v1] = atlas.rect(i);
-    for (let k = 0; k < uv.count; k++) uv.setXY(k, u0 + uv.getX(k) * (u1 - u0), v0 + uv.getY(k) * (v1 - v0));
-    return g.translate(0, LABEL.y, DISK.t / 2 + 0.0003);
-  });
+  const labelParts = items.map((_, i) =>
+    applyUvRect(new THREE.PlaneGeometry(LABEL.w, LABEL.h), atlas.rect(i)).translate(0, LABEL.y, DISK.t / 2 + 0.0003)
+  );
   const labelGeo = bag.add(merge(labelParts));
   for (const g of labelParts) g.dispose(); // merge() copied them
   const labelLocal = new Float32Array((labelGeo.getAttribute('position') as THREE.BufferAttribute).array);

@@ -17,14 +17,14 @@ FROM nginx:1.29-alpine
 # Non-root by design: the container listens on 8080/8443 and the host maps
 # 80→8080 / 443→8443, so a non-root process never has to bind a privileged
 # port while the public interface stays the conventional one.
-RUN addgroup -S -g 101 site && adduser -S -u 101 -G site site \
-    && mkdir -p /var/cache/nginx /var/run /var/www/certbot \
-    && chown -R site:site /var/cache/nginx /var/run /var/www/certbot \
-    && touch /var/run/nginx.pid && chown site:site /var/run/nginx.pid
+RUN mkdir -p /var/www/certbot
 
 COPY deploy/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/nginx/snippets/ /etc/nginx/snippets/
 COPY deploy/nginx/conf.d/ /etc/nginx/conf.d/
+# The image runs on its own with the HTTP config (replacing the stock
+# default.conf); docker-compose mounts the chosen one over it.
+COPY deploy/nginx/conf.d/http-only.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/jtc-site/browser /usr/share/nginx/html
 
 USER 101:101

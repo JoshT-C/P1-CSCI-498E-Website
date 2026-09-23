@@ -3,7 +3,7 @@
  * files, WebGL, fonts, storage, the network. Each must leave a working
  * page and an honest message, never a blank or a crash.
  */
-import { test, expect } from './support';
+import { test, expect, t } from './support';
 
 test.describe('GitHub API', () => {
   test('a server error shows why, and retry recovers', async ({ site, page, guard }) => {
@@ -59,15 +59,16 @@ test.describe('the room', () => {
     await page.route('**/assets/room/room.glb', route => route.fulfill({ status: 404, body: '' }));
     await site.open({ tier: 'room' });
     await site.require3d();
-    await expect.poll(async () => (await site.state()).tier, { timeout: 20_000 }).toBe('desk');
+    await expect.poll(async () => (await site.state()).tier, { timeout: t(20_000) }).toBe('desk');
     await expect(page.locator('.scene-host canvas')).toBeAttached();
   });
 
-  test('both room models missing: the flat page, with everything readable', async ({ site, page, guard }) => {
+  test('both room models missing: the flat page, with everything readable', async ({ site, page, guard, webgl }) => {
+    test.skip(!webgl, 'without WebGL the models are never requested');
     guard.allow(/room(-lite)?\.glb|room failed to load|Failed to load resource|404/i);
     await page.route(/\/assets\/room\/room(-lite)?\.glb$/, route => route.fulfill({ status: 404, body: '' }));
     await site.open({ tier: 'room' });
-    await expect.poll(async () => (await site.state()).render, { timeout: 30_000 }).toBe('css');
+    await expect.poll(async () => (await site.state()).render, { timeout: t(30_000) }).toBe('css');
     expect((await site.state()).tierReason).toBe('scene-load-fail');
     await site.enterShell();
     await site.run('about');
@@ -80,7 +81,7 @@ test.describe('the room', () => {
       route.fulfill({ status: 200, contentType: 'model/gltf-binary', body: 'not a model' })
     );
     await site.open({ tier: 'room' });
-    await expect.poll(async () => (await site.state()).render, { timeout: 30_000 }).toBe('css');
+    await expect.poll(async () => (await site.state()).render, { timeout: t(30_000) }).toBe('css');
   });
 
   test('no WebGL at all: the flat page from the start', async ({ site, page }) => {

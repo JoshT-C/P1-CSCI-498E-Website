@@ -1,5 +1,5 @@
 /** The room's stations: panels, deep links, the floppy shelf, the keyboard. */
-import { test, expect } from './support';
+import { test, expect, t } from './support';
 
 const STATIONS = [
   { id: 'rack', title: 'Homelab' },
@@ -43,7 +43,7 @@ test.describe('stations (3D)', () => {
     const before = (await site.state()).scrollY;
     await page.mouse.move(200, 400);
     await page.mouse.wheel(0, 1200);
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(t(400));
     expect((await site.state()).scrollY).toBe(before);
   });
 

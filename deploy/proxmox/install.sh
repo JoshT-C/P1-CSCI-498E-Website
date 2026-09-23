@@ -13,12 +13,13 @@
 #
 # Environment:
 #   JTC_REPO   git URL or path to build from   (default: the GitHub repo)
-#   JTC_REF    branch or tag                   (default: the repo's default)
+#   JTC_REF    branch or tag; HEAD or unset: the source's current commit
 #   NODE_MAJOR Node.js major version           (default: 24)
 set -Eeuo pipefail
 
 JTC_REPO="${JTC_REPO:-https://github.com/JoshT-C/P1-CSCI-498E-Website.git}"
 JTC_REF="${JTC_REF:-}"
+[[ "$JTC_REF" == "HEAD" ]] && JTC_REF="" # HEAD: whatever the source has checked out
 NODE_MAJOR="${NODE_MAJOR:-24}"
 APP_DIR=/opt/jtc-site
 SRC_DIR="$APP_DIR/src"

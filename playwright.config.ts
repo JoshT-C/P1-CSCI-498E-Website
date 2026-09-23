@@ -11,6 +11,8 @@ import { defineConfig, devices, type Project } from '@playwright/test';
  *   E2E_XVFB=1                          Firefox headed, for `xvfb-run`: headless
  *                                       Firefox gets no WebGL without a GPU,
  *                                       headed on Xvfb it renders on llvmpipe
+ *   E2E_TIME_SCALE=3                    stretch every time limit (default 1,
+ *                                       2 on CI) for a slower machine
  *   E2E_BASE_URL=http://127.0.0.1:8080  an already-running server, e.g. the
  *   E2E_NGINX=1                         nginx container; enables the header
  *                                       checks in security.spec.ts
@@ -21,6 +23,9 @@ import { defineConfig, devices, type Project } from '@playwright/test';
  * `npm run build` first when serving dist/.
  */
 const external = process.env['E2E_BASE_URL'];
+/** Slower machines and CI's software rendering: every limit scales (the
+ *  same factor as t() in e2e/support.ts). */
+const scale = Number(process.env['E2E_TIME_SCALE'] ?? (process.env['CI'] ? 2 : 1));
 const port = 4400;
 const engines = (process.env['E2E_BROWSERS'] ?? 'firefox').split(',').map(s => s.trim());
 
@@ -111,8 +116,8 @@ export default defineConfig<SuiteOptions>({
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   workers: process.env['CI'] ? 2 : 3,
-  timeout: 60_000,
-  expect: { timeout: 10_000 },
+  timeout: 60_000 * scale,
+  expect: { timeout: 10_000 * scale },
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: external ?? `http://127.0.0.1:${port}`,

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Stand-in for the Proxmox command of this name (deploy/proxmox/test/simulate.sh).
+echo "pveam $*" >> /tmp/pve.log
+case "$1" in
+  available) printf 'system          debian-12-standard_12.7-1_amd64.tar.zst\nsystem          debian-13-standard_13.1-1_amd64.tar.zst\nsystem          debian-13-standard_13.0-1_amd64.tar.zst\n';;
+  list) echo "NAME SIZE";;
+esac

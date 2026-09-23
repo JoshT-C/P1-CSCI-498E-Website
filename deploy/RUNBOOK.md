@@ -1,13 +1,20 @@
 # Deploy runbook — jtc.lopyhupis.com
 
-Run this over SSH on the server. The site is a single static Angular build
-served by a non-root nginx container; Let's Encrypt is issued via a certbot
-sidecar over the webroot (zero downtime — nginx never stops serving).
+Two ways to run the site; both serve the same prerendered Angular build
+through the same nginx rules (`deploy/nginx/snippets/`):
 
-State model: everything lives in `/opt/site` (a clone of this repo) and two
-named Docker volumes (`letsencrypt`, `certbot-webroot`). The only secret is
-`.env` (gitignored, server-only). Rollback is `git checkout <commit>` +
-rebuild — the container is stateless.
+- **Proxmox LXC behind a reverse proxy** (section P): one command on the
+  Proxmox host; TLS lives on the proxy (NGINX Proxy Manager, Caddy, a
+  tunnel).
+- **Docker on a server that faces the internet** (sections A–C): a
+  non-root, read-only nginx container, with Let's Encrypt issued by a
+  certbot sidecar over the webroot (zero downtime — nginx never stops
+  serving).
+
+Docker state model: everything lives in `/opt/site` (a clone of this repo)
+and two named Docker volumes (`letsencrypt`, `certbot-webroot`). The only
+secret is `.env` (gitignored, server-only). Rollback is `git checkout
+<commit>` + rebuild — the container is stateless.
 
 ---
 
@@ -18,26 +25,53 @@ bar — the shipped bundle is scanned, and the rendered page is audited in a
 real browser. Run from the repo root:
 
 ```bash
-npm run lint && npm test && npm run build
+npm run lint && npm run typecheck && npm test -- --watch=false && npm run build
 npm run audit:dist    # scans dist/ for secrets, http:// origins, sourcemaps
+npm run e2e           # Playwright: with and without WebGL, desktop and phone
 ```
 
-Manual matrix before deploying (in a browser, against `npm start`):
+CI (`.github/workflows/ci.yml`) runs all of that on every push, the
+Playwright suite in Chromium, Firefox and WebKit on Linux, macOS and Windows,
+and the suite again against the Docker image and a simulated Proxmox install
+with the nginx header checks on (`E2E_NGINX=1`).
 
-- desktop 1440 — 3D machine renders, scroll dives wide→close, screen text follows the section
-- 375 px — no horizontal overflow, DOM terminal card types, grid wraps
-- 200% zoom — layout holds, 44 px touch targets still work
-- reduced-motion (OS setting or DevTools emulation) — static screen, no dive, no reveal animation
-- `?no3d=1` — css mode: no canvas, terminal card types, `.stack-bars` visible, zero console errors
+After deploy, point the suite at the live site (headers included):
 
-After deploy: re-run the console/audit pass against the live URL
-(`node scripts/audit-browser.mjs https://jtc.lopyhupis.com` once it exists)
-and confirm the step-13 headers.
+```bash
+E2E_NGINX=1 E2E_BASE_URL=https://jtc.lopyhupis.com npx playwright test --project desktop-firefox
+```
 
-**Stop if** `audit:dist` reports any finding, or any matrix row shows console
-errors. A clean logged runtime-fps downgrade in a throttled/headless browser
-is a pass-with-note (the self-downgrade is the feature); an unexplained one
-is not.
+**Stop if** `audit:dist` reports any finding or any test fails. A 3D test
+skipped for "no WebGL in this browser" is the environment, not the site.
+
+---
+
+## P. Proxmox LXC (behind a reverse proxy)
+
+On the Proxmox host, as root:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/JoshT-C/P1-CSCI-498E-Website/main/deploy/proxmox/jtc-site.sh)"
+```
+
+It asks for defaults or advanced settings (ID, cores, memory, disk,
+bridge, DHCP or a static address, VLAN), downloads the Debian 13 template
+if needed, creates an **unprivileged** container whose Proxmox firewall
+allows inbound HTTP and ping only (effective once the datacenter firewall
+is on), and runs `deploy/proxmox/install.sh` in it: nginx, Node.js from
+NodeSource's signed repository, a build as the unprivileged `jtc-build`
+user, an atomic deploy to `/var/www/jtc-site`, and unattended security
+upgrades. Unattended: `JTC_DEFAULTS=1` plus any `var_*` variable (see the
+top of the script).
+
+Then point the proxy host for `jtc.lopyhupis.com` at `http://<container
+IP>:80` with TLS on. nginx takes the visitor's address from
+`X-Forwarded-For` only when the request comes from a private network, so
+the per-address limits apply per visitor, not to the proxy.
+
+Updates: `pct enter <id>`, then `update` (rebuilds only when the branch has
+a new commit). CI runs the whole flow on every push against stand-ins for
+the Proxmox commands (`deploy/proxmox/test/simulate.sh`).
 
 ## A. Preflight (one-time, ~10 min)
 
@@ -162,5 +196,6 @@ independent of the site build), so a rebuild is the entire rollback.
 | Step 8 works, step 9 doesn't | Something between the internet and nginx is rewriting paths (proxy). Remove/adjust it. |
 | Step 10 rate-limit error | Wait 15 min (LE limits: 50 certs/week/domain, 5 duplicates/week). |
 | Step 12 site dies after flip | `docker logs jtc-site` — almost always a cert path typo or the `letsencrypt` volume not named identically in both services. |
-| HTTPS works, HSTS missing | You're looking at the http-only config — `.env` still says `NGINX_CONF=http-only`. |
+| Headers missing on some pages | Some `location` block gained its own `add_header`, which drops every inherited header in nginx. Keep all headers in `jtc-site.conf` at server level. |
+| Pages cut off mid-load (connection reset) | The per-address limit (100 r/s, burst 400, 100 connections) closed the connection (444). Behind a proxy, check that it sends `X-Forwarded-For` from a private address. |
 | Page loads unstyled | A `/media/…` asset 404'd — check `docker logs jtc-site` and that the build stage ran (rebuild after any `package.json` change). |

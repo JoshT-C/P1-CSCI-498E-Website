@@ -15,6 +15,17 @@ import { test as base, expect, type Page } from '@playwright/test';
 
 export type Tier = 'room' | 'desk' | 'css';
 
+/**
+ * Machines differ in speed, and the room renders in software on CI, so
+ * every time limit and observation window here goes through t(): 1x by
+ * default, 2x on CI, or E2E_TIME_SCALE for a slower machine. Tests wait for
+ * states, not for time, wherever the outcome is something that happens;
+ * fixed windows remain only where the check is that something does NOT
+ * happen, or where the timing is the scenario itself (two quick clicks).
+ */
+export const TIME_SCALE = Number(process.env['E2E_TIME_SCALE'] ?? (process.env['CI'] ? 2 : 1));
+export const t = (ms: number): number => Math.round(ms * TIME_SCALE);
+
 export const EMAIL = 'joshua_t-c@outlook.com';
 
 /** What the GitHub API stand-in returns for the repo list. */
@@ -85,7 +96,7 @@ export class Site {
     await this.page.waitForFunction(
       () => document.documentElement.dataset['render'] === 'css' || document.documentElement.dataset['portal'] !== undefined,
       null,
-      { timeout: 30_000 }
+      { timeout: t(30_000) }
     );
   }
 
@@ -107,7 +118,7 @@ export class Site {
       .poll(async () => {
         const s = await this.state();
         return s.scrollY === s.maxScroll && s.shellVisible && (s.render !== '3d' || s.portal === 'in');
-      }, { timeout: 15_000 })
+      }, { timeout: t(15_000) })
       .toBe(true);
   }
 
@@ -131,7 +142,7 @@ export class Site {
 
   /** Wait for the shell to be fully on screen (it fades in over 450 ms). */
   async shellShown(): Promise<void> {
-    await expect.poll(async () => (await this.state()).shellVisible, { timeout: 15_000 }).toBe(true);
+    await expect.poll(async () => (await this.state()).shellVisible, { timeout: t(15_000) }).toBe(true);
   }
 
   async state(): Promise<ShellState> {

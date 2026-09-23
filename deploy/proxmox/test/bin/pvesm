@@ -1,0 +1,5 @@
+#!/bin/sh
+# Stand-in for the Proxmox command of this name (deploy/proxmox/test/simulate.sh).
+echo "pvesm $*" >> /tmp/pve.log
+echo "Name Type Status Total Used Available %"
+case "$*" in *rootdir*) echo "local-lvm lvmthin active 100 1 99 1%";; *vztmpl*) echo "local dir active 100 1 99 1%";; esac

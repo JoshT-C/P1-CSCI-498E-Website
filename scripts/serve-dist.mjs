@@ -3,15 +3,15 @@
  * A minimal static server for the prerendered build, for the browser audit
  * and the Playwright suite when no nginx is running. It serves files and the
  * single-page fallback only: none of nginx's headers, limits or caching —
- * those are checked against the real nginx (e2e/tests/security.spec.ts with
+ * those are checked against the real nginx (e2e/security.spec.ts with
  * E2E_NGINX=1, and the CI container job).
  *
  * Usage: node scripts/serve-dist.mjs [port]   (default 4400; 0 = any free port)
  */
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'jtc-site', 'browser');
 
@@ -44,7 +44,7 @@ export function serveDist({ port = 4400, root = DIST, host = '127.0.0.1' } = {})
   const server = createServer((req, res) => {
     const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
     const file = join(root, path);
-    if (!(file === root || file.startsWith(root + '/'))) {
+    if (!(file === root || file.startsWith(root + sep))) {
       res.writeHead(403).end();
       return;
     }
@@ -68,7 +68,8 @@ export function serveDist({ port = 4400, root = DIST, host = '127.0.0.1' } = {})
   });
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// run directly (the URL form, so Windows paths compare too)
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { url } = await serveDist({ port: Number(process.argv[2] ?? 4400) });
   console.log(`serving ${DIST} at ${url}`);
 }

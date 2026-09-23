@@ -1,5 +1,5 @@
 /** First load: what every visitor sees before they touch anything. */
-import { test, expect, EMAIL } from './support';
+import { test, expect, EMAIL, t } from './support';
 
 test.describe('first load', () => {
   test('names the page and the person', async ({ site, page }) => {
@@ -45,7 +45,7 @@ test.describe('first load', () => {
     });
     await site.open({ tier: 'room' });
     await site.require3d();
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(t(1500));
     const flashes = await page.evaluate(() => (window as unknown as { __flash: number[] }).__flash);
     expect(flashes, 'shell visible over the room at these times (ms)').toEqual([]);
   });
@@ -54,7 +54,7 @@ test.describe('first load', () => {
     await site.open({ tier: 'css' });
     expect((await site.state()).render).toBe('css');
     await expect(page.locator('.scene-host canvas')).toHaveCount(0);
-    await expect(page.locator('.term__screen')).toContainText('metaphysical exile', { timeout: 20_000 });
+    await expect(page.locator('.term__screen')).toContainText('metaphysical exile', { timeout: t(20_000) });
   });
 
   test('reduced motion: the flat page, typed card shown at once', async ({ site, page }) => {
@@ -63,7 +63,7 @@ test.describe('first load', () => {
     const s = await site.state();
     expect(s.render).toBe('css');
     expect(s.tierReason).toBe('reduced-motion');
-    await expect(page.locator('.term__screen')).toContainText('metaphysical exile', { timeout: 2_000 });
+    await expect(page.locator('.term__screen')).toContainText('metaphysical exile', { timeout: t(2_000) });
   });
 
   test('the page makes no request anywhere but itself and the GitHub API', async ({ site, page }) => {
