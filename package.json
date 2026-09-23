@@ -52,7 +52,7 @@
     "@playwright/test": "1.63.0",
     "@types/node": "^20.17.19",
     "@types/three": "^0.186.0",
-    "angular-eslint": "22.1.0",
+    "angular-eslint": "22.5.0",
     "eslint": "^10.6.0",
     "istanbul-lib-instrument": "^6.0.3",
     "jsdom": "^30.0.1",
