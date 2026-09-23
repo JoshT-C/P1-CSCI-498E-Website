@@ -7,6 +7,8 @@ import {
   STATION_POSES,
   blendPose,
   fitPose,
+  fovForAspect,
+  framedFor,
   spinePose,
   type CameraPose,
   type Vec3
@@ -143,4 +145,29 @@ describe('camera-path', () => {
       expect(shot.offsetY).toBeCloseTo(0, 0);
     });
   });
+
+  describe('framedFor', () => {
+    /** Half-width of the view at the target's distance, as tan × distance. */
+    const halfWidth = (pose: CameraPose, aspect: number): number =>
+      Math.tan((pose.fov * Math.PI) / 360) * aspect * dist(pose.position, pose.target);
+
+    it('leaves a wide enough screen alone', () => {
+      expectPoseNear(framedFor(SCREEN_VIEW, 1.8, 1.6), SCREEN_VIEW);
+      expect(framedFor(ESTABLISH, 0.5).fov).toBeCloseTo(fovForAspect(ESTABLISH.fov, 0.5));
+    });
+
+    it('keeps the held horizontal field on a portrait phone', () => {
+      const phone = framedFor(SCREEN_VIEW, 0.46, 1.6);
+      expect(halfWidth(phone, 0.46)).toBeCloseTo(halfWidth(SCREEN_VIEW, 1.6));
+      expect(phone.fov).toBeLessThanOrEqual(80);
+      expect(dist(phone.position, SCREEN_CENTER)).toBeGreaterThan(dist(SCREEN_VIEW.position, SCREEN_CENTER));
+      expectPoseNear({ ...phone, position: phone.target, fov: 0 }, { ...SCREEN_VIEW, position: SCREEN_VIEW.target, fov: 0 });
+    });
+
+    it('frames the whole spine for the aspect without breaking it', () => {
+      for (let i = 0; i <= 100; i++) assertFinite(spinePose(i / 100, 'desk', undefined, 0.46));
+      expect(spinePose(1, 'desk', undefined, 0.46).fov).toBeGreaterThan(PORTAL.fov);
+    });
+  });
 });
+

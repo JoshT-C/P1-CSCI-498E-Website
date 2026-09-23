@@ -31,6 +31,9 @@ interface Key {
   /** Spine fraction at which the camera passes this pose. */
   readonly at: number;
   readonly pose: CameraPose;
+  /** Aspect whose horizontal field this pose keeps on a narrower screen
+   *  (see framedFor); none for shots where a tall crop reads fine. */
+  readonly hold?: number;
 }
 
 const v = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
@@ -76,11 +79,13 @@ export const DESK_WIDE: CameraPose = {
   fov: 50
 };
 
+// The desk and screen shots are about the glass, which is wider than tall:
+// on a portrait phone they must keep its width, not just its height.
 const spine = (start: CameraPose): readonly Key[] => [
   { at: 0, pose: start },
-  { at: 0.42, pose: DESK_VIEW },
-  { at: 0.8, pose: SCREEN_VIEW },
-  { at: 1, pose: PORTAL }
+  { at: 0.42, pose: DESK_VIEW, hold: 1.25 },
+  { at: 0.8, pose: SCREEN_VIEW, hold: 1.6 },
+  { at: 1, pose: PORTAL, hold: 1.6 }
 ];
 
 const ROOM_SPINE = spine(ESTABLISH);
@@ -136,9 +141,11 @@ export function clampUnit(p: number): number {
  * through the keys (a lerp reads as a slider; the curve reads as a person
  * walking up to a desk); targets and fov ease per segment.
  */
-export function spinePose(p: number, tier: 'room' | 'desk' = 'room', start?: CameraPose): CameraPose {
+export function spinePose(p: number, tier: 'room' | 'desk' = 'room', start?: CameraPose, aspect?: number): CameraPose {
   // `start` replaces the opening shot (re-framed for the viewport by fitPose)
-  const SPINE = start ? spine(start) : tier === 'room' ? ROOM_SPINE : DESK_SPINE;
+  const base = start ? spine(start) : tier === 'room' ? ROOM_SPINE : DESK_SPINE;
+  // with an aspect, every key is framed for it and the fov returned is final
+  const SPINE = aspect === undefined ? base : base.map(k => ({ ...k, pose: framedFor(k.pose, aspect, k.hold) }));
   const t = clampUnit(p);
   if (t === 0) return SPINE[0].pose;
   if (t === 1) return SPINE[SPINE.length - 1].pose;
@@ -176,6 +183,28 @@ export function blendPose(a: CameraPose, b: CameraPose, t: number): CameraPose {
 export function fovForAspect(fov: number, aspect: number): number {
   if (!(aspect > 0) || aspect >= 1) return fov;
   return Math.min(fov / Math.sqrt(aspect), 85);
+}
+
+/**
+ * A pose framed for a viewport. Without `hold`, as fovForAspect. With it, a
+ * screen narrower than `hold` keeps the horizontal field the pose has at
+ * `hold`: the fov takes half the correction (up to 80°) and the camera
+ * steps back along its line of sight for the rest, so a phone held upright
+ * sees the whole CRT glass without a fish-eye.
+ */
+export function framedFor(pose: CameraPose, aspect: number, hold?: number): CameraPose {
+  if (!hold || !(aspect > 0) || aspect >= hold) return { ...pose, fov: fovForAspect(pose.fov, aspect) };
+  const need = hold / aspect;
+  const tan = Math.tan((pose.fov * Math.PI) / 360);
+  const wide = Math.min(tan * Math.sqrt(need), Math.tan((80 * Math.PI) / 360));
+  const back = (need * tan) / wide;
+  const t = pose.target;
+  const q = pose.position;
+  return {
+    position: v(t.x + (q.x - t.x) * back, t.y + (q.y - t.y) * back, t.z + (q.z - t.z) * back),
+    target: t,
+    fov: (Math.atan(wide) * 360) / Math.PI
+  };
 }
 
 /** Spine fraction past which the glass fills the frame and the DOM takes over. */

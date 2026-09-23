@@ -18,7 +18,7 @@ export const RENDER = {
   /** At most this many device pixels per frame (1080p is 2.07 M). */
   pixelBudget: { room: 2_100_000, desk: 1_300_000 },
   /** devicePixelRatio caps per tier. */
-  dprCap: { room: 2, desk: 1.5 },
+  dprCap: { room: 2, desk: 2 },
   windowMs: 1000,
   warmupMs: 1500,
   targetFps: 50,

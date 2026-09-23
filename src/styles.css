@@ -557,8 +557,9 @@ app-shell {
   }
 }
 
-@media (max-width: 720px) {
-  /* phones: the pane docks to the bottom, the room shows above it */
+@media (max-width: 720px), (max-height: 500px) {
+  /* phones, upright or on their side: the pane docks to the bottom, the
+     room shows above it */
   :root[data-render='3d'] .intro__inner {
     grid-template-rows: 1fr auto;
     align-content: end;
@@ -593,6 +594,52 @@ app-shell {
     grid-template-columns: auto auto;
     gap: 6px;
     border: 1px solid var(--hairline);
+  }
+}
+
+/* a phone on its side: under 500px of height even the docked pane would
+   cover the desk. The name is already in the header, so it is kept for
+   screen readers only and the stations run in one row along the bottom. */
+@media (min-width: 721px) and (max-height: 500px) {
+  :root[data-render='3d'] .intro__stage {
+    top: var(--header-h);
+    height: calc(100svh - var(--header-h));
+    padding: var(--sp-2);
+  }
+
+  :root[data-render='3d'] .intro__panel {
+    justify-self: start;
+    width: auto;
+    padding: 6px;
+  }
+
+  :root[data-render='3d'] .intro__plate {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    margin: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  :root[data-render='3d'] .intro__panel .stations {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  :root[data-render='3d'] .intro__inner {
+    gap: var(--sp-1);
+  }
+
+  :root[data-render='3d'] .stations__list {
+    flex-wrap: nowrap;
+    margin: 0;
+  }
+
+  :root[data-render='3d'] .station-link {
+    min-height: 32px;
   }
 }
 
@@ -1335,6 +1382,13 @@ html.js .term__screen.is-typing {
 
   .station-panel__inner {
     padding: var(--sp-3) var(--sp-3) var(--sp-5);
+  }
+}
+
+/* a phone on its side: the room keeps the left of the screen */
+@media (min-width: 721px) and (max-height: 500px) {
+  .station-panel {
+    width: min(560px, 62vw);
   }
 }
 

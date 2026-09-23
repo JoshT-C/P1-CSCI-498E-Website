@@ -199,6 +199,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   // the props right of the intro pane, and each station its prop left of
   // the panel. Null keeps the fixed pose (phones, or before the room loads).
   let openShot: FittedShot | null = null;
+  let headerHeight = 0;
   const stationShots: Partial<Record<StationId, FittedShot>> = {};
   const measure = (): void => {
     const rect = intro.getBoundingClientRect();
@@ -211,6 +212,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     for (const id of Object.keys(stationShots) as StationId[]) delete stationShots[id];
     if (!room) return;
     const header = document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0;
+    headerHeight = header;
     const bounds = { min: ROOM_MIN, max: ROOM_MAX };
     const edge = 24;
     const frame = { width, height, top: header + edge, bottom: height - edge };
@@ -221,7 +223,9 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       openShot = fitPose(spinePose(0, tier), keyPoints.open, { ...frame, left: paneRight + edge, right: width - edge }, bounds, { near: 0 });
     }
     if (width > 720) {
-      const panel = Math.min(560, width);
+      // the station panel's width, as styles.css sets it (narrower on a
+      // phone on its side)
+      const panel = Math.min(560, height <= 500 ? width * 0.62 : width);
       for (const [id, points] of Object.entries(keyPoints.stations) as [StationId, Vec3[]][]) {
         stationShots[id] = fitPose(STATION_POSES[id], points, { ...frame, left: edge, right: width - panel - edge }, bounds, { near: 0.3 });
       }
@@ -389,7 +393,9 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   const aimCamera = (dt: number): boolean => {
     const station = state.station;
     const fitted = station ? stationShots[station] : null;
-    const pose: CameraPose = station ? (fitted?.pose ?? STATION_POSES[station]) : spinePose(spineP, tier, openShot?.pose);
+    // spine poses come back framed for the aspect; stations are widened here
+    const pose: CameraPose = station ? (fitted?.pose ?? STATION_POSES[station]) : spinePose(spineP, tier, openShot?.pose, camera.aspect);
+    const fov = station ? fovForAspect(pose.fov, camera.aspect) : pose.fov;
     want.position.set(pose.position.x, pose.position.y, pose.position.z);
     want.target.set(pose.target.x, pose.target.y, pose.target.z);
     // A hand-held drift in the wide shot; none once you are at the desk.
@@ -402,7 +408,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     const k = 1 - Math.exp(-dt / tau);
     cur.position.lerp(want.position, k);
     cur.target.lerp(want.target, k);
-    cur.fov += (fovForAspect(pose.fov, camera.aspect) - cur.fov) * k;
+    cur.fov += (fov - cur.fov) * k;
     // Keep the prop clear of the DOM: a fitted shot carries the shift that
     // centres its props beside the panel or the intro pane (the opening
     // one easing out as the camera walks in); unfitted, a panel open on the
@@ -415,6 +421,10 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     } else if (openShot && spineP < PICKABLE_UNTIL) {
       const ease = 1 - spineP / PICKABLE_UNTIL;
       [wantX, wantY] = [openShot.offsetX * ease, openShot.offsetY * ease];
+    } else if (tier === 'desk') {
+      // a phone's header covers a good slice of the top: centre the shot
+      // in what is left
+      wantY = -headerHeight / 2;
     }
     cur.offset += (wantX - cur.offset) * k;
     cur.offsetY += (wantY - cur.offsetY) * k;
@@ -542,7 +552,7 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
       fitShots();
       // open on the fitted shot rather than drifting into it
       if (openShot && state.station === null) {
-        const p = spinePose(spineP, tier, openShot.pose);
+        const p = spinePose(spineP, tier, openShot.pose, camera.aspect);
         cur.position.set(p.position.x, p.position.y, p.position.z);
         cur.target.set(p.target.x, p.target.y, p.target.z);
       }
