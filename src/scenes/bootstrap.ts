@@ -124,7 +124,8 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
 
   // ?debug exposes the scene to the console and the browser audit
   // (draw calls via renderer.info, picking a pixel back to its mesh).
-  if (new URLSearchParams(window.location.search).has('debug')) {
+  const debug = new URLSearchParams(window.location.search).has('debug');
+  if (debug) {
     (window as unknown as Record<string, unknown>)['__scene'] = { THREE, scene, camera, renderer };
   }
 
@@ -248,9 +249,16 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
   };
 
   const pick = (): void => {
+    // Whenever picking is impossible, drop the hover even if the pointer
+    // has not moved: scrolling the camera away with a still mouse must not
+    // leave a prop "hovered" for the next click to open.
+    if (state.station !== null || spineP > PICKABLE_UNTIL || portalInside) {
+      if (hovered) setHovered(null);
+      return;
+    }
     if (!pointer.fresh) return;
     pointer.fresh = false;
-    if (!pointer.inside || state.station !== null || spineP > PICKABLE_UNTIL) {
+    if (!pointer.inside) {
       setHovered(null);
       return;
     }
@@ -340,11 +348,10 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     }
 
     const settled = aimCamera(dt);
+    pick();
     // Through the glass and still: the DOM covers the canvas, so skip the
     // GPU work entirely until something moves again.
     if (portalInside && settled) return;
-
-    pick();
 
     const section = state.station ? 'hero' : state.section;
     if (section !== termState.section || state.projects !== termState.projects) {
@@ -433,9 +440,11 @@ export function createScene(options: CreateSceneOptions): SceneHandle {
     for (const sub of subs) sub.unsubscribe();
     room?.dispose();
     screen.dispose();
-    composer?.renderTarget1.dispose();
-    composer?.renderTarget2.dispose();
+    // EffectComposer.dispose() frees its own targets, not its passes'
+    bloom?.dispose();
+    film?.dispose();
     composer?.dispose();
+    if (debug) delete (window as unknown as Record<string, unknown>)['__scene'];
     renderer.dispose();
     canvas.remove();
   }

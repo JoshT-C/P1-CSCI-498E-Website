@@ -2,11 +2,11 @@ import { Component, computed, inject } from '@angular/core';
 import { SceneSyncService, type StationId } from '../../services/scene-sync.service';
 
 const LABELS: Record<StationId, string> = {
-  terminal: 'terminal · go in',
-  rack: 'rack · the homelab',
+  terminal: 'terminal · log in and read',
+  rack: 'rack · machines, models',
   floppies: 'floppies · more projects',
-  whiteboard: 'whiteboard · architecture',
-  laptop: 'laptop · secondary stack'
+  whiteboard: 'whiteboard · diagrams',
+  laptop: 'laptop · second machine'
 };
 
 /**

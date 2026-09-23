@@ -79,7 +79,8 @@ export class SceneSyncService {
   openStation(station: StationId, item: string | null = null): void {
     if (station === 'terminal') {
       this.closeStation();
-      this.document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' });
+      const reduced = this.document.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
+      this.document.getElementById('work')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
       return;
     }
     const floppy = station === 'floppies' ? (item ?? this.floppy() ?? FLOPPIES[0]?.id ?? null) : null;

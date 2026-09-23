@@ -91,6 +91,7 @@ export function createFloppies(items: readonly FloppyData[]): Floppies {
     return g.translate(0, LABEL.y, DISK.t / 2 + 0.0003);
   });
   const labelGeo = bag.add(merge(labelParts));
+  for (const g of labelParts) g.dispose(); // merge() copied them
   const labelLocal = new Float32Array((labelGeo.getAttribute('position') as THREE.BufferAttribute).array);
   const vertsPerLabel = labelLocal.length / 3 / count;
   const labels = new THREE.Mesh(
