@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # ---- Serve stage: hardened, non-root nginx ----
-FROM nginx:1.29-alpine
+FROM nginx:1.31-alpine
 
 # Non-root by design: the container listens on 8080/8443 and the host maps
 # 80→8080 / 443→8443, so a non-root process never has to bind a privileged
