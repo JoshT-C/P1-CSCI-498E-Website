@@ -46,7 +46,7 @@
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.4",
     "@eslint/js": "^10.0.1",
-    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/extensions": "^4.5.0",
     "@gltf-transform/functions": "^4.5.0",
     "@playwright/test": "1.63.0",
